@@ -22,10 +22,10 @@ const buyers = [
 ]
 
 const currencyMeta = [
-    { currency: 'USD', country: 'United States', color: '#006097' },
-    { currency: 'EUR', country: 'Germany', color: '#0085c0' },
-    { currency: 'GBP', country: 'United Kingdom', color: '#00aae4' },
-    { currency: 'CHF', country: 'Switzerland', color: '#7fd4f1' }
+    { currency: 'USD', country: 'United States', color: '#38bdf8' },
+    { currency: 'EUR', country: 'Germany', color: '#2dd4bf' },
+    { currency: 'GBP', country: 'United Kingdom', color: '#a78bfa' },
+    { currency: 'CHF', country: 'Switzerland', color: '#f0b34a' }
 ]
 
 export const currencyColors = Object.fromEntries(

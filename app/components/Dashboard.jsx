@@ -219,10 +219,10 @@ function CompanyMap({ role, onRoleChange }) {
 function TopList({ title, items, selectedName, onSelect }) {
     const max = items[0]?.value || 1
     return (
-        <div className="card bg-base-100 shadow-sm border border-base-300">
-            <div className="card-body p-5">
-                <h3 className="font-semibold text-base-content/80">{title}</h3>
-                <div className="flex flex-col gap-2 mt-2">
+        <div className="panel">
+            <div className="panel-pad">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-base-content/55">{title}</h3>
+                <div className="flex flex-col gap-2 mt-3">
                     {items.map((item, i) => {
                         const active = selectedName === item.name
                         const dim = selectedName && !active
@@ -233,10 +233,10 @@ function TopList({ title, items, selectedName, onSelect }) {
                                 className={`flex flex-col gap-1 rounded-lg px-2 py-1.5 -mx-2 text-left transition-all ${active ? 'bg-base-200 ring-1 ring-primary/40' : 'hover:bg-base-200/60'} ${dim ? 'opacity-40' : ''}`}
                             >
                                 <div className="flex justify-between text-sm">
-                                    <span className="font-medium"><span className="text-base-content/40 mr-2">{i + 1}</span>{item.name}</span>
-                                    <span className="text-base-content/60 font-mono">{fmt(item.value)}</span>
+                                    <span className="font-medium"><span className="text-base-content/35 mr-2 tnum">{i + 1}</span>{item.name}</span>
+                                    <span className="text-base-content/55 tnum">{fmt(item.value)}</span>
                                 </div>
-                                <div className="h-1.5 w-full rounded-full bg-base-200">
+                                <div className="h-1.5 w-full rounded-full bg-white/[0.06]">
                                     <div className="h-1.5 rounded-full tf-gradient" style={{ width: `${(item.value / max) * 100}%` }} />
                                 </div>
                             </button>
@@ -272,32 +272,32 @@ export default function Dashboard() {
                     <p>Explore settled volume and the strongest participants across your network.</p>
                 </div>
 
-                <div className="card bg-base-100 shadow-sm border border-base-300">
-                    <div className="card-body p-5">
+                <div className="panel">
+                    <div className="panel-pad">
                         <div className="flex items-center justify-between gap-4 flex-wrap">
                             <div>
-                                <h3 className="font-semibold text-base-content/80">Settled Volume</h3>
-                                <p className="text-xs text-base-content/50">Click a bar to filter · USD-equivalent</p>
+                                <h3 className="text-xs font-semibold uppercase tracking-wider text-base-content/55">Settled volume</h3>
+                                <p className="text-xs text-base-content/40 mt-1">Click a bar to filter · USD-equivalent</p>
                             </div>
-                            <div className="join">
+                            <div className="seg">
                                 {RANGES.map(r => (
-                                    <button key={r.key} className={`join-item btn btn-sm ${range === r.key ? 'btn-primary' : 'btn-ghost'}`} onClick={() => { setRange(r.key); setFilters(f => ({ ...f, period: null })) }}>
+                                    <button key={r.key} className={`seg__btn ${range === r.key ? 'is-active' : ''}`} onClick={() => { setRange(r.key); setFilters(f => ({ ...f, period: null })) }}>
                                         {r.label}
                                     </button>
                                 ))}
                             </div>
                         </div>
-                        <div className="mt-3">
+                        <div className="mt-4">
                             <BarChart data={barData} selectedLabel={filters.period?.rangeKey === range ? filters.period.label : null} onBarClick={togglePeriod} />
                         </div>
                     </div>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div className="card bg-base-100 shadow-sm border border-base-300">
-                        <div className="card-body p-5">
-                            <h3 className="font-semibold text-base-content/80">Volume by Currency</h3>
-                            <p className="text-xs text-base-content/50 mb-3">Click a slice to filter</p>
+                    <div className="panel">
+                        <div className="panel-pad">
+                            <h3 className="text-xs font-semibold uppercase tracking-wider text-base-content/55">Volume by currency</h3>
+                            <p className="text-xs text-base-content/40 mt-1 mb-4">Click a slice to filter</p>
                             <PieChart data={pieData} selectedLabel={filters.currency} onSliceClick={label => toggle('currency', label)} />
                         </div>
                     </div>

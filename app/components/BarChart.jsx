@@ -23,8 +23,9 @@ export default function BarChart({ data, selectedLabel, onBarClick }) {
         <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto">
             <defs>
                 <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#00aae4" />
-                    <stop offset="100%" stopColor="#006097" />
+                    <stop offset="0%" stopColor="#7ee0ff" />
+                    <stop offset="55%" stopColor="#38bdf8" />
+                    <stop offset="100%" stopColor="#1f96cf" />
                 </linearGradient>
             </defs>
             {data.map((d, i) => {
@@ -42,10 +43,10 @@ export default function BarChart({ data, selectedLabel, onBarClick }) {
                         {/* full-height hit area so thin/short bars are easy to click */}
                         <rect x={x} y={padding.top} width={barW} height={chartH} fill="transparent" />
                         <rect x={x} y={y} width={barW} height={h} rx="6" fill="url(#barGrad)" />
-                        <text x={x + barW / 2} y={y - 6} textAnchor="middle" fontSize="11" fill="#0f2a3c" fontWeight="600">
+                        <text x={x + barW / 2} y={y - 6} textAnchor="middle" fontSize="11" fill="#e6edf4" fontWeight="600">
                             {fmt(d.value)}
                         </text>
-                        <text x={x + barW / 2} y={height - 10} textAnchor="middle" fontSize="11" fill="#64748b">
+                        <text x={x + barW / 2} y={height - 10} textAnchor="middle" fontSize="11" fill="#7e8c9a">
                             {d.label}
                         </text>
                     </g>
