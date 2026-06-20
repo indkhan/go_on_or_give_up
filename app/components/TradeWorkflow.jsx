@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import * as xrpl from 'xrpl'
 import { useWallet } from '../context/WalletContext'
+import { ASSET_LIST, DEFAULT_ASSET } from '../config/assets'
 
 export default function TradeWorkflow() {
     const [buyerWallet, setBuyerWallet] = useState(null)
@@ -19,6 +20,7 @@ export default function TradeWorkflow() {
 
     const [escrowUnlockTime, setEscrowUnlockTime] = useState(null)
     const [secondsRemaining, setSecondsRemaining] = useState(0)
+    const [selectedAsset, setSelectedAsset] = useState(DEFAULT_ASSET)
 
     const {
         connected,
@@ -252,7 +254,7 @@ export default function TradeWorkflow() {
                 TransactionType: 'EscrowCreate',
                 Account: accountAddress,
                 Destination: supplierWallet.address,
-                Amount: xrpl.xrpToDrops(trade.amount),
+                Amount: selectedAsset.buildAmount(trade.amount),
                 FinishAfter: finishAfter
             }
 
@@ -433,7 +435,7 @@ export default function TradeWorkflow() {
                         </p>
 
                         <p>
-                            <strong>Amount:</strong> {trade?.amount || 2} XRP
+                            <strong>Amount:</strong> {trade?.amount || 2} {selectedAsset.label}
                         </p>
 
                         <p>
@@ -489,12 +491,33 @@ export default function TradeWorkflow() {
 
                         )}
 
+                        <div className="mt-4">
+                            <p className="text-sm font-semibold mb-2">
+                                Settlement Asset
+                            </p>
+                            <div className="flex gap-2">
+                                {ASSET_LIST.map(asset => (
+                                    <button
+                                        key={asset.id}
+                                        className={`btn btn-sm ${
+                                            selectedAsset.id === asset.id
+                                                ? 'btn-primary'
+                                                : 'btn-outline'
+                                        }`}
+                                        onClick={() => setSelectedAsset(asset)}
+                                    >
+                                        {asset.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
                         <button
                             className="btn btn-secondary mt-2"
                             disabled={!agentResult?.approved}
                             onClick={reserveFunds}
                         >
-                            Reserve Funds
+                            Reserve Funds in {selectedAsset.label}
                         </button>
 
                         {escrowResult && (
