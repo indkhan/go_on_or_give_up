@@ -125,6 +125,11 @@ AI extracts:
 - Invoice Amount
 - Due Date
 
+### Agent Infrastructure & Controls (Must Have)
+- **KYA Verification:** AI agent authenticates document data using a secure credential signature before sending it to the backend.
+- **Compliance Layer:** Automated policy and jurisdiction validation check before executing any blockchain transaction.
+- **Spending Policies:** Programmatic multi-signature or smart control limits embedded in the XRPL wallet layer.
+
 ---
 
 ### Trade Creation
@@ -343,16 +348,16 @@ Settlement Successful
 ## High-Level Architecture
 
 Frontend (Lovable / React)
-↓
-Backend API
-↓
-OpenAI
-↓
-XRPL SDK
-↓
-RLUSD
-↓
-TokenEscrow
+        ↓
+    Backend API
+        ↓
+   OpenAI (AI)
+        ↓  [1. KYA Stamp]
+  Trade Service (Backend)
+        ↓  [3. Regulated Settlement / Compliance Layer]
+   Wallet (XRPL) -> [2. Agent Spending Policies]
+        ↓
+   TokenEscrow ➔ RLUSD Settlement
 
 ---
 
