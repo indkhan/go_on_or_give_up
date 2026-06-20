@@ -164,9 +164,75 @@ html {
 }
 
 .vector-marker:hover .vector-pin-ring,
-.vector-marker:focus .vector-pin-ring {
+.vector-marker:focus .vector-pin-ring,
+.vector-marker.selected .vector-pin-ring {
   r: 11;
   fill: rgba(7, 128, 174, .36);
+}
+
+.vector-marker.selected .vector-pin-core {
+  fill: #fff;
+  stroke: #79ddff;
+  stroke-width: 2;
+}
+
+.trade-route {
+  pointer-events: none;
+}
+
+.trade-route-glow {
+  fill: none;
+  stroke: rgba(74, 201, 242, .34);
+  stroke-width: 10;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+  filter: blur(3px);
+}
+
+.trade-route-line {
+  fill: none;
+  stroke: #7ee5ff;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  vector-effect: non-scaling-stroke;
+  animation: drawTradeRoute .95s cubic-bezier(.2, .75, .25, 1) forwards;
+}
+
+.trade-route-particle {
+  fill: #dff9ff;
+  stroke: #62d7ff;
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.swiss-hub-pulse {
+  fill: rgba(98, 215, 255, .08);
+  stroke: rgba(98, 215, 255, .5);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+  animation: swissHubPulse 1.8s ease-out infinite;
+}
+
+.swiss-hub-ring {
+  fill: #0d1b22;
+  stroke: #79ddff;
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.swiss-hub-core {
+  fill: #fff;
+}
+
+@keyframes drawTradeRoute {
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes swissHubPulse {
+  0% { opacity: 1; transform: scale(.5); }
+  75%, 100% { opacity: 0; transform: scale(1.45); }
 }
 
 .vector-card-layer {

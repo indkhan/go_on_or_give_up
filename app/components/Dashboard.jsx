@@ -26,6 +26,7 @@ const MAP_HEIGHT = 600
 const land = feature(landTopology, landTopology.objects.land)
 const projection = geoNaturalEarth1().fitExtent([[25, 35], [1175, 565]], land)
 const landPath = geoPath(projection)(land)
+const [SWISS_X, SWISS_Y] = projection([8.5417, 47.3769])
 
 const companies = {
     seller: [
@@ -56,6 +57,7 @@ function CompanyMap({ role, onRoleChange }) {
     const [zoom, setZoom] = useState(1)
     const [pan, setPan] = useState({ x: 0, y: 0 })
     const [hovered, setHovered] = useState(null)
+    const [selected, setSelected] = useState(null)
     const drag = useRef(null)
     const targetType = role === 'buyer' ? 'seller' : 'buyer'
     const targetLabel = targetType === 'seller' ? 'sellers' : 'buyers'
@@ -73,6 +75,18 @@ function CompanyMap({ role, onRoleChange }) {
         setPan({ x: 0, y: 0 })
     }
     const mapTransform = `translate(${MAP_WIDTH / 2 + pan.x} ${MAP_HEIGHT / 2 + pan.y}) scale(${zoom}) translate(${-MAP_WIDTH / 2} ${-MAP_HEIGHT / 2})`
+    const selectedCompany = visible.find(company => company.name === selected)
+    const routePath = selectedCompany
+        ? (() => {
+            const startX = selectedCompany.x + (selectedCompany.offset?.[0] || 0)
+            const startY = selectedCompany.y + (selectedCompany.offset?.[1] || 0)
+            const distance = Math.hypot(SWISS_X - startX, SWISS_Y - startY)
+            const curve = Math.max(28, Math.min(105, distance * 0.24))
+            const controlX = (startX + SWISS_X) / 2
+            const controlY = (startY + SWISS_Y) / 2 - curve
+            return `M ${startX} ${startY} Q ${controlX} ${controlY} ${SWISS_X} ${SWISS_Y}`
+        })()
+        : null
 
     return (
         <section className="market-map-shell">
@@ -114,16 +128,33 @@ function CompanyMap({ role, onRoleChange }) {
                 <g transform={mapTransform} className="vector-map-layer">
                     <path d={landPath} className="vector-land" />
 
+                    {routePath && (
+                        <g key={selected} className="trade-route">
+                            <path d={routePath} className="trade-route-glow" />
+                            <path d={routePath} pathLength="1" className="trade-route-line" />
+                            <circle r="4.5" className="trade-route-particle" filter="url(#pin-glow)">
+                                <animateMotion dur="2.1s" repeatCount="indefinite" path={routePath} />
+                            </circle>
+                            <g transform={`translate(${SWISS_X} ${SWISS_Y})`} className="swiss-hub">
+                                <circle r="15" className="swiss-hub-pulse" />
+                                <circle r="7" className="swiss-hub-ring" />
+                                <circle r="3" className="swiss-hub-core" />
+                            </g>
+                        </g>
+                    )}
+
                     {visible.map(company => (
                         <g
                             key={company.name}
-                            className="vector-marker"
+                            className={`vector-marker ${selected === company.name ? 'selected' : ''}`}
                             transform={`translate(${company.x + (company.offset?.[0] || 0)} ${company.y + (company.offset?.[1] || 0)})`}
                             onPointerEnter={() => setHovered(company.name)}
                             onPointerLeave={() => setHovered(null)}
                             onClick={event => {
                                 event.stopPropagation()
-                                setHovered(current => current === company.name ? null : company.name)
+                                setSelected(current => current === company.name ? null : company.name)
+                                setHovered(null)
+                                event.currentTarget.blur()
                             }}
                             onFocus={() => setHovered(company.name)}
                             onBlur={() => setHovered(null)}
