@@ -1,6 +1,7 @@
 import { Inter, Space_Grotesk, JetBrains_Mono } from 'next/font/google'
 import './globals.css'
 import { WalletProvider } from './context/WalletContext'
+import { RoleProvider } from './context/RoleContext'
 
 const inter = Inter({
     subsets: ['latin'],
@@ -30,7 +31,9 @@ export default function RootLayout({ children }) {
         <html lang="en" data-theme="tradeflow">
             <body className={`${inter.variable} ${display.variable} ${mono.variable} antialiased`}>
                 <WalletProvider>
-                    {children}
+                    <RoleProvider>
+                        {children}
+                    </RoleProvider>
                 </WalletProvider>
             </body>
         </html>

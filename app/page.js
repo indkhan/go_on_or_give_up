@@ -5,6 +5,26 @@ import StatusBadge from './components/StatusBadge'
 import Dashboard from './components/Dashboard'
 import { invoices as seedInvoices } from './data/mockData'
 import TradeWorkflow from './components/TradeWorkflow'
+import { useRole } from './context/RoleContext'
+
+function RoleOnboarding({ onSelect }) {
+    return (
+        <div className="app-shell flex min-h-screen items-center justify-center px-6">
+            <div className="panel panel-pad max-w-sm text-center">
+                <h2 className="font-display text-lg font-semibold">Welcome to TradeFlow AI</h2>
+                <p className="mt-1 text-sm text-base-content/55">Tell us how you'll use the platform.</p>
+                <div className="mt-6 flex flex-col gap-3">
+                    <button className="btn-glow rounded-[0.7rem] py-3 text-sm font-semibold" onClick={() => onSelect('buyer')}>
+                        I'm a Buyer
+                    </button>
+                    <button className="btn-glow rounded-[0.7rem] py-3 text-sm font-semibold" onClick={() => onSelect('seller')}>
+                        I'm a Seller
+                    </button>
+                </div>
+            </div>
+        </div>
+    )
+}
 
 function UploadIcon() {
     return (
@@ -138,8 +158,12 @@ const TABS = [
 ]
 
 export default function Home() {
+    const { role, setRole, loaded } = useRole()
     const [tab, setTab] = useState('invoices')
     const [rows, setRows] = useState(seedInvoices)
+
+    if (!loaded) return null
+    if (!role) return <RoleOnboarding onSelect={setRole} />
 
     function handleProcessed(data, meta) {
         const next = {

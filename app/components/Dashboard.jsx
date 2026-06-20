@@ -7,6 +7,7 @@ import { feature } from 'topojson-client'
 import landTopology from 'world-atlas/land-110m.json'
 import BarChart from './BarChart'
 import PieChart from './PieChart'
+import { useRole } from '../context/RoleContext'
 import {
     transactions,
     filterTxns,
@@ -53,7 +54,7 @@ function fmt(v) {
     return `$${v}`
 }
 
-function CompanyMap({ role, onRoleChange }) {
+function CompanyMap({ role }) {
     const [zoom, setZoom] = useState(1)
     const [pan, setPan] = useState({ x: 0, y: 0 })
     const [hovered, setHovered] = useState(null)
@@ -194,19 +195,6 @@ function CompanyMap({ role, onRoleChange }) {
                 </g>
             </svg>
 
-            <div className="role-switch market-role-switch" aria-label="Select your market role">
-                {['buyer', 'seller'].map(option => (
-                    <button
-                        key={option}
-                        className={role === option ? 'active' : ''}
-                        onClick={() => onRoleChange(option)}
-                        aria-pressed={role === option}
-                    >
-                        {option === 'buyer' ? 'Buyer' : 'Seller'}
-                    </button>
-                ))}
-            </div>
-
             <div className="vector-map-controls" aria-label="Map controls">
                 <button onClick={() => changeZoom(zoom + 0.18)} aria-label="Zoom in"><Plus size={17} /></button>
                 <button onClick={() => changeZoom(zoom - 0.18)} aria-label="Zoom out"><Minus size={17} /></button>
@@ -251,7 +239,7 @@ function TopList({ title, items, selectedName, onSelect }) {
 const EMPTY = { period: null, currency: null, supplier: null, buyer: null }
 
 export default function Dashboard() {
-    const [role, setRole] = useState('buyer')
+    const { role } = useRole()
     const [range, setRange] = useState('monthly')
     const [filters, setFilters] = useState(EMPTY)
     const togglePeriod = label => setFilters(f => ({ ...f, period: f.period?.label === label && f.period?.rangeKey === range ? null : { rangeKey: range, label } }))
@@ -263,7 +251,7 @@ export default function Dashboard() {
 
     return (
         <div className="dashboard-experience">
-            <CompanyMap role={role} onRoleChange={setRole} />
+            <CompanyMap role={role} />
 
             <section id="analytics" className="analytics-section">
                 <div className="analytics-heading">
@@ -302,8 +290,12 @@ export default function Dashboard() {
                         </div>
                     </div>
                     <div className="flex flex-col gap-6">
-                        <TopList title="Top Suppliers" items={supplierData} selectedName={filters.supplier} onSelect={name => toggle('supplier', name)} />
-                        <TopList title="Top Buyers" items={buyerData} selectedName={filters.buyer} onSelect={name => toggle('buyer', name)} />
+                        {role !== 'seller' && (
+                            <TopList title="Top Suppliers" items={supplierData} selectedName={filters.supplier} onSelect={name => toggle('supplier', name)} />
+                        )}
+                        {role !== 'buyer' && (
+                            <TopList title="Top Buyers" items={buyerData} selectedName={filters.buyer} onSelect={name => toggle('buyer', name)} />
+                        )}
                     </div>
                 </div>
             </section>
