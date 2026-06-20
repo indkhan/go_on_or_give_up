@@ -1,5 +1,4 @@
 import { Inter } from 'next/font/google'
-import 'maplibre-gl/dist/maplibre-gl.css'
 import './globals.css'
 import { WalletProvider } from './context/WalletContext'
 

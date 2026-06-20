@@ -1,8 +1,10 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { Search } from 'lucide-react'
-import maplibregl from 'maplibre-gl'
+import { useMemo, useRef, useState } from 'react'
+import { Minus, Plus, RotateCcw } from 'lucide-react'
+import { geoNaturalEarth1, geoPath } from 'd3-geo'
+import { feature } from 'topojson-client'
+import landTopology from 'world-atlas/land-110m.json'
 import BarChart from './BarChart'
 import PieChart from './PieChart'
 import {
@@ -19,22 +21,28 @@ const RANGES = [
     { key: 'weekly', label: 'Weekly' }
 ]
 
+const MAP_WIDTH = 1200
+const MAP_HEIGHT = 600
+const land = feature(landTopology, landTopology.objects.land)
+const projection = geoNaturalEarth1().fitExtent([[25, 35], [1175, 565]], land)
+const landPath = geoPath(projection)(land)
+
 const companies = {
     seller: [
         { name: 'Global Steel Co', city: 'Chicago', country: 'United States', lat: 41.8781, lng: -87.6298, volume: 2840000, deals: 38, sector: 'Industrial steel', match: 96 },
-        { name: 'Lyon Textiles', city: 'Lyon', country: 'France', lat: 45.764, lng: 4.8357, volume: 1680000, deals: 24, sector: 'Technical textiles', match: 92 },
-        { name: 'Manchester Parts Ltd', city: 'Manchester', country: 'United Kingdom', lat: 53.4808, lng: -2.2426, volume: 1240000, deals: 19, sector: 'Auto components', match: 89 },
-        { name: 'Berlin Machinery', city: 'Berlin', country: 'Germany', lat: 52.52, lng: 13.405, volume: 3210000, deals: 42, sector: 'Heavy machinery', match: 98 },
-        { name: 'Milan Fashion srl', city: 'Milan', country: 'Italy', lat: 45.4642, lng: 9.19, volume: 980000, deals: 17, sector: 'Apparel', match: 87 },
+        { name: 'Lyon Textiles', city: 'Lyon', country: 'France', lat: 45.764, lng: 4.8357, offset: [-12, 8], volume: 1680000, deals: 24, sector: 'Technical textiles', match: 92 },
+        { name: 'Manchester Parts Ltd', city: 'Manchester', country: 'United Kingdom', lat: 53.4808, lng: -2.2426, offset: [-13, -10], volume: 1240000, deals: 19, sector: 'Auto components', match: 89 },
+        { name: 'Berlin Machinery', city: 'Berlin', country: 'Germany', lat: 52.52, lng: 13.405, offset: [14, -10], volume: 3210000, deals: 42, sector: 'Heavy machinery', match: 98 },
+        { name: 'Milan Fashion srl', city: 'Milan', country: 'Italy', lat: 45.4642, lng: 9.19, offset: [13, 10], volume: 980000, deals: 17, sector: 'Apparel', match: 87 },
         { name: 'Shenzhen Components', city: 'Shenzhen', country: 'China', lat: 22.5431, lng: 114.0579, volume: 4460000, deals: 61, sector: 'Electronics', match: 94 },
-        { name: 'Rotterdam Logistics', city: 'Rotterdam', country: 'Netherlands', lat: 51.9244, lng: 4.4777, volume: 2090000, deals: 31, sector: 'Freight & logistics', match: 91 }
+        { name: 'Rotterdam Logistics', city: 'Rotterdam', country: 'Netherlands', lat: 51.9244, lng: 4.4777, offset: [0, -17], volume: 2090000, deals: 31, sector: 'Freight & logistics', match: 91 }
     ],
     buyer: [
-        { name: 'Swiss Import AG', city: 'Zürich', country: 'Switzerland', lat: 47.3769, lng: 8.5417, volume: 3750000, deals: 48, sector: 'Import & distribution', match: 97 },
-        { name: 'Zurich Retail GmbH', city: 'Zürich', country: 'Switzerland', lat: 47.385, lng: 8.56, volume: 2240000, deals: 33, sector: 'Retail', match: 93 },
-        { name: 'Helvetia Trading', city: 'Geneva', country: 'Switzerland', lat: 46.2044, lng: 6.1432, volume: 1870000, deals: 28, sector: 'Commodities', match: 90 },
-        { name: 'Alpine Goods AG', city: 'Bern', country: 'Switzerland', lat: 46.948, lng: 7.4474, volume: 1430000, deals: 21, sector: 'Consumer goods', match: 88 },
-        { name: 'Geneva Commodities', city: 'Geneva', country: 'Switzerland', lat: 46.19, lng: 6.12, volume: 2920000, deals: 36, sector: 'Raw materials', match: 95 }
+        { name: 'Swiss Import AG', city: 'Zürich', country: 'Switzerland', lat: 47.3769, lng: 8.5417, offset: [-18, -12], volume: 3750000, deals: 48, sector: 'Import & distribution', match: 97 },
+        { name: 'Zurich Retail GmbH', city: 'Zürich', country: 'Switzerland', lat: 47.385, lng: 8.56, offset: [18, -10], volume: 2240000, deals: 33, sector: 'Retail', match: 93 },
+        { name: 'Helvetia Trading', city: 'Geneva', country: 'Switzerland', lat: 46.2044, lng: 6.1432, offset: [-19, 13], volume: 1870000, deals: 28, sector: 'Commodities', match: 90 },
+        { name: 'Alpine Goods AG', city: 'Bern', country: 'Switzerland', lat: 46.948, lng: 7.4474, offset: [0, 18], volume: 1430000, deals: 21, sector: 'Consumer goods', match: 88 },
+        { name: 'Geneva Commodities', city: 'Geneva', country: 'Switzerland', lat: 46.19, lng: 6.12, offset: [20, 14], volume: 2920000, deals: 36, sector: 'Raw materials', match: 95 }
     ]
 }
 
@@ -45,150 +53,133 @@ function fmt(v) {
 }
 
 function CompanyMap({ role, onRoleChange }) {
-    const [query, setQuery] = useState('')
-    const mapContainer = useRef(null)
-    const map = useRef(null)
-    const markers = useRef([])
+    const [zoom, setZoom] = useState(1)
+    const [pan, setPan] = useState({ x: 0, y: 0 })
+    const [hovered, setHovered] = useState(null)
+    const drag = useRef(null)
     const targetType = role === 'buyer' ? 'seller' : 'buyer'
     const targetLabel = targetType === 'seller' ? 'sellers' : 'buyers'
     const visible = useMemo(
-        () => companies[targetType].filter(company =>
-            `${company.name} ${company.city} ${company.country} ${company.sector}`
-                .toLowerCase()
-                .includes(query.toLowerCase())
-        ),
-        [query, targetType]
+        () => companies[targetType].map(company => {
+            const [x, y] = projection([company.lng, company.lat])
+            return { ...company, x, y }
+        }),
+        [targetType]
     )
 
-    useEffect(() => {
-        if (map.current) return
-
-        map.current = new maplibregl.Map({
-            container: mapContainer.current,
-            center: [12, 30],
-            zoom: 1.35,
-            minZoom: 1,
-            maxZoom: 12,
-            attributionControl: false,
-            style: {
-                version: 8,
-                sources: {
-                    carto: {
-                        type: 'raster',
-                        tiles: [
-                            'https://a.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}@2x.png',
-                            'https://b.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}@2x.png',
-                            'https://c.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}@2x.png',
-                            'https://d.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}@2x.png'
-                        ],
-                        tileSize: 256,
-                        attribution: '© OpenStreetMap contributors © CARTO'
-                    }
-                },
-                layers: [{ id: 'carto-dark', type: 'raster', source: 'carto' }]
-            }
-        })
-
-        map.current.addControl(
-            new maplibregl.NavigationControl({ showCompass: false, visualizePitch: false }),
-            'bottom-right'
-        )
-
-        return () => {
-            markers.current.forEach(marker => marker.remove())
-            map.current?.remove()
-            map.current = null
-        }
-    }, [])
-
-    useEffect(() => {
-        if (!map.current) return
-        markers.current.forEach(marker => marker.remove())
-
-        markers.current = visible.map(company => {
-            const pin = document.createElement('button')
-            pin.className = 'clean-map-pin'
-            pin.type = 'button'
-            pin.setAttribute('aria-label', `${company.name}, ${company.city}`)
-            pin.innerHTML = '<span></span>'
-
-            const card = document.createElement('div')
-            card.className = 'clean-map-popup'
-
-            const top = document.createElement('div')
-            top.className = 'clean-map-popup-top'
-            const name = document.createElement('strong')
-            name.textContent = company.name
-            const match = document.createElement('b')
-            match.textContent = `${company.match}% match`
-            top.append(name, match)
-
-            const location = document.createElement('p')
-            location.textContent = `${company.city}, ${company.country}`
-
-            const stats = document.createElement('div')
-            stats.className = 'clean-map-popup-stats'
-            const volume = document.createElement('span')
-            volume.innerHTML = `<small>Trade volume</small><strong>${fmt(company.volume)}</strong>`
-            const deals = document.createElement('span')
-            deals.innerHTML = `<small>Completed deals</small><strong>${company.deals}</strong>`
-            stats.append(volume, deals)
-
-            const sector = document.createElement('small')
-            sector.className = 'clean-map-popup-sector'
-            sector.textContent = company.sector
-            card.append(top, location, stats, sector)
-
-            const popup = new maplibregl.Popup({
-                offset: 20,
-                closeButton: false,
-                closeOnClick: true,
-                maxWidth: '280px'
-            }).setDOMContent(card)
-
-            return new maplibregl.Marker({ element: pin, anchor: 'center' })
-                .setLngLat([company.lng, company.lat])
-                .setPopup(popup)
-                .addTo(map.current)
-        })
-
-        if (visible.length > 0) {
-            const bounds = new maplibregl.LngLatBounds()
-            visible.forEach(company => bounds.extend([company.lng, company.lat]))
-            map.current.fitBounds(bounds, {
-                padding: window.innerWidth < 700 ? 70 : 140,
-                maxZoom: targetType === 'buyer' ? 6 : 3.1,
-                duration: 700
-            })
-        }
-    }, [visible, targetType])
+    const changeZoom = next => setZoom(Math.min(2.4, Math.max(0.85, next)))
+    const resetMap = () => {
+        setZoom(1)
+        setPan({ x: 0, y: 0 })
+    }
+    const mapTransform = `translate(${MAP_WIDTH / 2 + pan.x} ${MAP_HEIGHT / 2 + pan.y}) scale(${zoom}) translate(${-MAP_WIDTH / 2} ${-MAP_HEIGHT / 2})`
 
     return (
         <section className="market-map-shell">
-            <div ref={mapContainer} className="clean-map" aria-label={`Map showing available ${targetLabel}`} />
+            <svg
+                className="vector-map"
+                viewBox={`0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`}
+                role="application"
+                aria-label={`Interactive world map showing ${targetLabel}`}
+                onWheel={event => {
+                    event.preventDefault()
+                    changeZoom(zoom + (event.deltaY < 0 ? 0.12 : -0.12))
+                }}
+                onPointerDown={event => {
+                    if (event.target.closest('.vector-marker')) return
+                    event.currentTarget.setPointerCapture(event.pointerId)
+                    drag.current = { x: event.clientX, y: event.clientY, pan }
+                }}
+                onPointerMove={event => {
+                    if (!drag.current) return
+                    setPan({
+                        x: drag.current.pan.x + event.clientX - drag.current.x,
+                        y: drag.current.pan.y + event.clientY - drag.current.y
+                    })
+                }}
+                onPointerUp={() => { drag.current = null }}
+                onPointerCancel={() => { drag.current = null }}
+            >
+                <defs>
+                    <radialGradient id="ocean-light" cx="50%" cy="45%" r="70%">
+                        <stop offset="0%" stopColor="#101a21" />
+                        <stop offset="100%" stopColor="#060a0d" />
+                    </radialGradient>
+                    <filter id="pin-glow" x="-200%" y="-200%" width="400%" height="400%">
+                        <feGaussianBlur stdDeviation="4" result="blur" />
+                        <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+                    </filter>
+                </defs>
+                <rect width={MAP_WIDTH} height={MAP_HEIGHT} fill="url(#ocean-light)" />
+                <g transform={mapTransform} className="vector-map-layer">
+                    <path d={landPath} className="vector-land" />
 
-            <div className="market-map-toolbar">
-                <div className="role-switch" aria-label="Select your market role">
-                    {['buyer', 'seller'].map(option => (
-                        <button
-                            key={option}
-                            className={role === option ? 'active' : ''}
-                            onClick={() => onRoleChange(option)}
-                            aria-pressed={role === option}
+                    {visible.map(company => (
+                        <g
+                            key={company.name}
+                            className="vector-marker"
+                            transform={`translate(${company.x + (company.offset?.[0] || 0)} ${company.y + (company.offset?.[1] || 0)})`}
+                            onPointerEnter={() => setHovered(company.name)}
+                            onPointerLeave={() => setHovered(null)}
+                            onClick={event => {
+                                event.stopPropagation()
+                                setHovered(current => current === company.name ? null : company.name)
+                            }}
+                            onFocus={() => setHovered(company.name)}
+                            onBlur={() => setHovered(null)}
+                            tabIndex="0"
+                            aria-label={`${company.name}, ${company.city}`}
                         >
-                            I&apos;m a {option}
-                        </button>
+                            <circle r="16" className="vector-pin-hit" />
+                            <circle r="9" className="vector-pin-ring" />
+                            <circle r="4" className="vector-pin-core" filter="url(#pin-glow)" />
+                        </g>
                     ))}
-                </div>
 
-                <label className="market-search">
-                    <Search size={16} />
-                    <input
-                        value={query}
-                        onChange={event => setQuery(event.target.value)}
-                        placeholder={`Search ${targetLabel}, sectors or countries`}
-                    />
-                </label>
+                    {hovered && (() => {
+                        const company = visible.find(item => item.name === hovered)
+                        if (!company) return null
+                        const alignLeft = company.x > 900
+                        const cardX = alignLeft ? -278 : 20
+                        return (
+                            <g transform={`translate(${company.x + (company.offset?.[0] || 0)} ${company.y + (company.offset?.[1] || 0)})`} className="vector-card-layer">
+                                <foreignObject x={cardX} y="-78" width="260" height="170">
+                                    <div className="vector-company-card" xmlns="http://www.w3.org/1999/xhtml">
+                                        <div className="vector-card-top">
+                                            <strong>{company.name}</strong>
+                                            <b>{company.match}% match</b>
+                                        </div>
+                                        <p>{company.city}, {company.country}</p>
+                                        <div className="vector-card-stats">
+                                            <span><small>Trade volume</small><strong>{fmt(company.volume)}</strong></span>
+                                            <span><small>Completed deals</small><strong>{company.deals}</strong></span>
+                                        </div>
+                                        <small className="vector-card-sector">{company.sector}</small>
+                                    </div>
+                                </foreignObject>
+                            </g>
+                        )
+                    })()}
+                </g>
+            </svg>
+
+            <div className="role-switch market-role-switch" aria-label="Select your market role">
+                {['buyer', 'seller'].map(option => (
+                    <button
+                        key={option}
+                        className={role === option ? 'active' : ''}
+                        onClick={() => onRoleChange(option)}
+                        aria-pressed={role === option}
+                    >
+                        {option === 'buyer' ? 'Buyer' : 'Seller'}
+                    </button>
+                ))}
+            </div>
+
+            <div className="vector-map-controls" aria-label="Map controls">
+                <button onClick={() => changeZoom(zoom + 0.18)} aria-label="Zoom in"><Plus size={17} /></button>
+                <button onClick={() => changeZoom(zoom - 0.18)} aria-label="Zoom out"><Minus size={17} /></button>
+                <button onClick={resetMap} aria-label="Reset map"><RotateCcw size={15} /></button>
             </div>
         </section>
     )
