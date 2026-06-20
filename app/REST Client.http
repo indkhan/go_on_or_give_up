@@ -15,3 +15,16 @@ Content-Type: application/json
   "uri": "ipfs://example-uri"
 }
 
+
+### Extract invoice (OCR for JPEG/PNG, text layer for PDF)
+# Put a sample invoice at ./samples/invoice.jpg (or .pdf) and run this.
+POST http://localhost:3000/api/extract-invoice
+Content-Type: multipart/form-data; boundary=----TradeFlowBoundary
+
+------TradeFlowBoundary
+Content-Disposition: form-data; name="file"; filename="invoice.jpg"
+Content-Type: image/jpeg
+
+< ./samples/invoice.jpg
+------TradeFlowBoundary--
+
