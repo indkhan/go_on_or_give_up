@@ -142,17 +142,49 @@ function orgNearKeyword(text, keywordRe, orgs) {
   return best ? best.name : null;
 }
 
+// Buyer (recipient) label variants across invoice/receipt formats, plus a few
+// non-English ones. Multi-word labels come before their shorter forms so the
+// longer one wins (JS alternation is first-match, not longest-match).
+const BUYER_LABELS =
+  /(bill(?:ed)?\s*to|sold\s*to|ship(?:ped)?\s*to|deliver(?:ed)?\s*to|invoice[d]?\s*to|customer\s*name|account\s*name|buyer|customer|client|purchaser|consignee|recipient|payer|rechnung\s*an|kunde|factur[eé]\s*[àa]|cliente|destinatario)\s*[:\-]?/i;
+
+// Supplier (issuer/payee) label variants. Bare "from" is left out to avoid
+// false hits; the top-of-invoice org covers that case.
+const SUPPLIER_LABELS =
+  /(supplier|seller|sold\s*by|bill\s*from|vendor|issued\s*by|remit\s*to|pay\s*to|payee|beneficiary|lieferant|fournisseur|proveedor|fornitore)\s*[:\-]?/i;
+
+// First meaningful line at/after a label. Handles "Bill To: Name" on one line
+// and "Bill To:" with the name on the next line; skips blanks, other labels,
+// and address-like lines that start with a number. Catches names with no
+// company suffix that findOrgs would miss.
+function lineAfterLabel(text, labelRe) {
+  const lines = text.split(/\r?\n/);
+  for (let i = 0; i < lines.length; i++) {
+    const m = lines[i].match(labelRe);
+    if (!m) continue;
+    const sameLine = lines[i].slice(m.index + m[0].length).replace(/^[\s:\-]+/, "").trim();
+    const candidates = [sameLine, ...lines.slice(i + 1, i + 4).map((l) => l.trim())];
+    for (const c of candidates) {
+      if (c && c.length > 1 && !/^\d/.test(c) && !labelRe.test(c)) {
+        return c.replace(/\s{2,}/g, " ").slice(0, 60);
+      }
+    }
+  }
+  return null;
+}
+
 export function extractFields(text) {
   const clean = (text || "").replace(/ /g, " ");
   const orgs = findOrgs(clean);
 
   const supplier =
-    orgNearKeyword(clean, /(supplier|seller|sold\s*by|bill\s*from|from)\s*[:\-]?/i, orgs) ||
-    (orgs[0] ? orgs[0].name : null);
+    orgNearKeyword(clean, SUPPLIER_LABELS, orgs) ||
+    (orgs[0] ? orgs[0].name : null) ||
+    lineAfterLabel(clean, SUPPLIER_LABELS);
 
   let buyer =
-    orgNearKeyword(clean, /(bill\s*to|sold\s*to|buyer|customer|invoice\s*to|ship\s*to)\s*[:\-]?/i, orgs) ||
-    null;
+    orgNearKeyword(clean, BUYER_LABELS, orgs) ||
+    lineAfterLabel(clean, BUYER_LABELS);
 
   // Avoid supplier and buyer collapsing to the same org.
   if (buyer && supplier && buyer === supplier) {
