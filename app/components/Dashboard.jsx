@@ -125,7 +125,7 @@ function CompanyMap({ role }) {
                         <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
                     </filter>
                 </defs>
-                <rect width={MAP_WIDTH} height={MAP_HEIGHT} fill="url(#ocean-light)" />
+                <rect width={MAP_WIDTH} height={MAP_HEIGHT} fill="url(#ocean-light)" className="vector-ocean-bg" />
                 <g transform={mapTransform} className="vector-map-layer">
                     <path d={landPath} className="vector-land" />
 
@@ -224,7 +224,7 @@ function TopList({ title, items, selectedName, onSelect }) {
                                     <span className="font-medium"><span className="text-base-content/35 mr-2 tnum">{i + 1}</span>{item.name}</span>
                                     <span className="text-base-content/55 tnum">{fmt(item.value)}</span>
                                 </div>
-                                <div className="h-1.5 w-full rounded-full bg-white/[0.06]">
+                                <div className="h-1.5 w-full rounded-full bar-track">
                                     <div className="h-1.5 rounded-full tf-gradient" style={{ width: `${(item.value / max) * 100}%` }} />
                                 </div>
                             </button>
