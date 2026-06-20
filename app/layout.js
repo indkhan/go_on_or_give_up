@@ -5,8 +5,8 @@ import { WalletProvider } from './context/WalletContext'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata = {
-    title: 'XRPL Wallet',
-    description: 'Hackathon XRPL Wallet',
+    title: 'TradeFlow AI',
+    description: 'AI-Assisted Trade Finance on XRPL',
 }
 
 export default function RootLayout({ children }) {

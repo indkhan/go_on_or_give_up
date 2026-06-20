@@ -1,11 +1,30 @@
 @import "tailwindcss";
 @plugin "daisyui" {
-  themes: corporate --default;
+  themes: tradeflow --default;
 }
 @plugin "daisyui/theme" {
-  name: "corporate";
+  name: "tradeflow";
   default: true;
-  --color-primary: #7813f6;
-  --color-secondary: #8d3cf7;
-  --color-accent: #ffaf6e;
+  color-scheme: light;
+  --color-primary: #006097;
+  --color-primary-content: #ffffff;
+  --color-secondary: #0085c0;
+  --color-secondary-content: #ffffff;
+  --color-accent: #00aae4;
+  --color-accent-content: #ffffff;
+  --color-base-100: #ffffff;
+  --color-base-200: #f1f6fa;
+  --color-base-300: #dfeaf2;
+  --color-base-content: #0f2a3c;
+}
+
+/* TradeFlow brand gradient (lighter -> primary blue) */
+.tf-gradient {
+  background: linear-gradient(135deg, #00aae4 0%, #0085c0 50%, #006097 100%);
+}
+.tf-text-gradient {
+  background: linear-gradient(135deg, #00aae4 0%, #006097 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
