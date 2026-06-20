@@ -8,22 +8,35 @@ import { invoices as seedInvoices } from './data/mockData'
 function InvoiceUpload({ onProcessed }) {
     const [file, setFile] = useState(null)
     const [busy, setBusy] = useState(false)
+    const [error, setError] = useState(null)
 
     function pick(e) {
         const f = e.target.files?.[0]
-        if (f) setFile(f)
+        if (f) {
+            setFile(f)
+            setError(null)
+        }
     }
 
     async function process() {
         if (!file) return
         setBusy(true)
-        // Placeholder: AI extraction is a teammate's task.
-        // For now we simulate the processing -> completed transition.
-        setTimeout(() => {
-            setBusy(false)
-            onProcessed?.(file)
+        setError(null)
+        try {
+            const form = new FormData()
+            form.append('file', file)
+            const res = await fetch('/api/extract-invoice', { method: 'POST', body: form })
+            const json = await res.json()
+            if (!res.ok || !json.ok) {
+                throw new Error(json.error || 'Extraction failed.')
+            }
+            onProcessed?.(json.data, json.meta)
             setFile(null)
-        }, 1500)
+        } catch (err) {
+            setError(err.message || 'Could not process the invoice.')
+        } finally {
+            setBusy(false)
+        }
     }
 
     return (
@@ -73,6 +86,10 @@ function InvoiceUpload({ onProcessed }) {
                         'Process Invoice'
                     )}
                 </button>
+
+                {error && (
+                    <p className="mt-3 text-sm text-error">{error}</p>
+                )}
             </div>
         </div>
     )
@@ -119,17 +136,18 @@ export default function Home() {
     const [tab, setTab] = useState('invoices')
     const [rows, setRows] = useState(seedInvoices)
 
-    function handleProcessed(file) {
-        // New uploads land as "processing" until the AI step (teammate) fills in details.
+    function handleProcessed(data, meta) {
+        // Fields extracted by /api/extract-invoice (OCR for images, text layer for PDFs).
+        // If anything is missing or OCR confidence was low, flag it for human review.
         const next = {
             id: `INV-2026-${String(rows.length + 1).padStart(3, '0')}`,
-            supplier: file.name.replace(/\.[^.]+$/, ''),
-            buyer: '—',
-            amount: 0,
-            currency: '—',
+            supplier: data?.supplier || '—',
+            buyer: data?.buyer || '—',
+            amount: typeof data?.amount === 'number' ? data.amount : 0,
+            currency: data?.currency || '—',
             country: '—',
             date: new Date().toISOString().slice(0, 10),
-            status: 'processing'
+            status: meta?.needsReview ? 'pending' : 'completed'
         }
         setRows([next, ...rows])
     }
