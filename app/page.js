@@ -169,9 +169,9 @@ export default function Home() {
                 </div>
             </header>
 
-            <main className="max-w-5xl mx-auto px-6 py-8">
+            <main className={tab === 'dashboard' ? 'dashboard-main' : 'max-w-5xl mx-auto px-6 py-8'}>
                 {/* Tabs */}
-                <div role="tablist" className="tabs tabs-boxed bg-base-100 w-fit mb-6 shadow-sm">
+                <div role="tablist" className={`tabs tabs-boxed bg-base-100 w-fit shadow-sm ${tab === 'dashboard' ? 'dashboard-tabs' : 'mb-6'}`}>
                     <button
                         role="tab"
                         className={`tab ${tab === 'invoices' ? 'tab-active !bg-primary !text-white' : ''}`}
