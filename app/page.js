@@ -41,7 +41,13 @@ function InvoiceUpload({ onProcessed }) {
     }
 
     return (
-        <div className="card bg-base-100 shadow-sm border border-base-300">
+        <div
+            className="card bg-base-100 border border-base-300"
+            style={{
+                borderRadius: '16px',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.07)',
+            }}
+        >
             <div className="card-body p-6">
                 <h2 className="text-lg font-semibold">Upload Invoice</h2>
                 <p className="text-sm text-base-content/60">
@@ -50,7 +56,8 @@ function InvoiceUpload({ onProcessed }) {
 
                 <label
                     htmlFor="invoice-file"
-                    className="mt-4 flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-base-300 bg-base-200/50 px-6 py-10 cursor-pointer hover:border-accent transition-colors"
+                    className="mt-4 flex flex-col items-center justify-center gap-2 border-2 border-dashed border-base-300/80 bg-base-200/40 px-6 py-10 cursor-pointer hover:border-primary/50 hover:bg-base-200/70 transition-all duration-200"
+                    style={{ borderRadius: '16px' }}
                 >
                     <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#0085c0" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -75,7 +82,8 @@ function InvoiceUpload({ onProcessed }) {
                 </label>
 
                 <button
-                    className="btn btn-primary mt-4 w-full"
+                    className="btn btn-primary mt-4 w-full transition-all duration-200"
+                    style={{ borderRadius: '12px' }}
                     disabled={!file || busy}
                     onClick={process}
                 >
@@ -98,7 +106,13 @@ function InvoiceUpload({ onProcessed }) {
 
 function InvoiceTable({ rows }) {
     return (
-        <div className="card bg-base-100 shadow-sm border border-base-300">
+        <div
+            className="card bg-base-100 border border-base-300"
+            style={{
+                borderRadius: '16px',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.07)',
+            }}
+        >
             <div className="card-body p-0">
                 <div className="overflow-x-auto">
                     <table className="table">
@@ -114,7 +128,7 @@ function InvoiceTable({ rows }) {
                         </thead>
                         <tbody>
                             {rows.map(inv => (
-                                <tr key={inv.id} className="hover:bg-base-200/40">
+                                <tr key={inv.id} className="hover:bg-base-200/60 transition-colors duration-200">
                                     <td className="font-mono text-xs">{inv.id}</td>
                                     <td className="font-medium">{inv.supplier}</td>
                                     <td>{inv.buyer}</td>
@@ -171,27 +185,31 @@ export default function Home() {
 
             <main className={tab === 'dashboard' ? 'dashboard-main' : 'max-w-5xl mx-auto px-6 py-8'}>
                 {/* Tabs */}
-                <div role="tablist" className={`tabs tabs-boxed bg-base-100 w-fit shadow-sm ${tab === 'dashboard' ? 'dashboard-tabs' : 'mb-6'}`}>
+                <div
+                    role="tablist"
+                    className={`tabs tabs-boxed bg-base-100 w-fit shadow-sm ${tab === 'dashboard' ? 'dashboard-tabs' : 'mb-6'}`}
+                    style={{ borderRadius: '11px' }}
+                >
                     <button
                         role="tab"
-                        className={`tab ${tab === 'invoices' ? 'tab-active !bg-primary !text-white' : ''}`}
+                        className={`tab transition-colors duration-200 ${tab === 'invoices' ? 'tab-active !bg-primary !text-white' : ''}`}
+                        style={tab === 'invoices' ? { borderRadius: '8px' } : {}}
                         onClick={() => setTab('invoices')}
                     >
                         Invoices
                     </button>
                     <button
                         role="tab"
-                        className={`tab ${tab === 'dashboard' ? 'tab-active !bg-primary !text-white' : ''}`}
+                        className={`tab transition-colors duration-200 ${tab === 'dashboard' ? 'tab-active !bg-primary !text-white' : ''}`}
+                        style={tab === 'dashboard' ? { borderRadius: '8px' } : {}}
                         onClick={() => setTab('dashboard')}
                     >
                         Dashboard
                     </button>
                     <button
                         role="tab"
-                        className={`tab ${tab === 'workflow'
-                            ? 'tab-active !bg-primary !text-white'
-                            : ''
-                            }`}
+                        className={`tab transition-colors duration-200 ${tab === 'workflow' ? 'tab-active !bg-primary !text-white' : ''}`}
+                        style={tab === 'workflow' ? { borderRadius: '8px' } : {}}
                         onClick={() => setTab('workflow')}
                     >
                         Trade Workflow
