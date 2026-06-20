@@ -1,7 +1,8 @@
 'use client'
 
-// Lightweight SVG donut chart. data: [{ label, value, color }]
-export default function PieChart({ data }) {
+// Clickable SVG donut chart. data: [{ label, value, color }]
+// selectedLabel highlights one slice; onSliceClick(label) toggles the filter.
+export default function PieChart({ data, selectedLabel, onSliceClick }) {
     const size = 200
     const radius = 80
     const inner = 48
@@ -32,19 +33,36 @@ export default function PieChart({ data }) {
                     const start = angle
                     const end = angle + slice
                     angle = end
-                    return <path key={d.label} d={arc(start, end)} fill={d.color} />
+                    const dim = selectedLabel && d.label !== selectedLabel
+                    return (
+                        <path
+                            key={d.label}
+                            d={arc(start, end)}
+                            fill={d.color}
+                            opacity={dim ? 0.3 : 1}
+                            className="cursor-pointer transition-opacity"
+                            onClick={() => onSliceClick?.(d.label)}
+                        />
+                    )
                 })}
             </svg>
             <div className="flex flex-col gap-2">
-                {data.map(d => (
-                    <div key={d.label} className="flex items-center gap-2 text-sm">
-                        <span className="h-3 w-3 rounded-sm" style={{ backgroundColor: d.color }} />
-                        <span className="font-medium">{d.label}</span>
-                        <span className="text-base-content/50">
-                            {Math.round((d.value / total) * 100)}%
-                        </span>
-                    </div>
-                ))}
+                {data.map(d => {
+                    const active = selectedLabel === d.label
+                    return (
+                        <button
+                            key={d.label}
+                            onClick={() => onSliceClick?.(d.label)}
+                            className={`flex items-center gap-2 text-sm rounded px-2 py-1 -mx-2 transition-colors ${active ? 'bg-base-200' : 'hover:bg-base-200/60'}`}
+                        >
+                            <span className="h-3 w-3 rounded-sm" style={{ backgroundColor: d.color }} />
+                            <span className="font-medium">{d.label}</span>
+                            <span className="text-base-content/50">
+                                {Math.round((d.value / total) * 100)}%
+                            </span>
+                        </button>
+                    )
+                })}
             </div>
         </div>
     )
