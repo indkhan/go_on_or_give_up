@@ -262,3 +262,8 @@ http://localhost:3000
 ***
 
 
+Notes: 
+XRPL stores XRP as drops.
+1 XRP = 1,000,000 drops
+EscrowCreate = reserve funds
+EscrowFinish = release fund
