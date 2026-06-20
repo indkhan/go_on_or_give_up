@@ -4,6 +4,7 @@ import { useState } from 'react'
 import StatusBadge from './components/StatusBadge'
 import Dashboard from './components/Dashboard'
 import { invoices as seedInvoices } from './data/mockData'
+import TradeWorkflow from './components/TradeWorkflow'
 
 function InvoiceUpload({ onProcessed }) {
     const [file, setFile] = useState(null)
@@ -185,6 +186,16 @@ export default function Home() {
                     >
                         Dashboard
                     </button>
+                    <button
+                        role="tab"
+                        className={`tab ${tab === 'workflow'
+                            ? 'tab-active !bg-primary !text-white'
+                            : ''
+                            }`}
+                        onClick={() => setTab('workflow')}
+                    >
+                        Trade Workflow
+                    </button>
                 </div>
 
                 {tab === 'invoices' ? (
@@ -192,8 +203,10 @@ export default function Home() {
                         <InvoiceUpload onProcessed={handleProcessed} />
                         <InvoiceTable rows={rows} />
                     </div>
-                ) : (
+                ) : tab === 'dashboard' ? (
                     <Dashboard />
+                ) : (
+                    <TradeWorkflow />
                 )}
             </main>
         </div>

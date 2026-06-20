@@ -5,7 +5,7 @@ export async function POST(request) {
     const { account, limit = 10, marker } = await request.json()
 
     try {
-        const client = new xrpl.Client(process.env.CLIENT)
+        const client = new xrpl.Client(process.env.NEXT_PUBLIC_CLIENT)
         await client.connect()
 
         const response = await client.request({

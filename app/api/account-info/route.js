@@ -29,9 +29,17 @@ export async function POST(request) {
         });
     }
     catch (error) {
+
+        console.error("ACCOUNT INFO ERROR")
+        console.error(JSON.stringify(error, null, 2))
+
         return NextResponse.json(
-            { error: error.message },
-            { status: 500 }
+            {
+                error: error.message
+            },
+            {
+                status: 500
+            }
         );
     }
 }

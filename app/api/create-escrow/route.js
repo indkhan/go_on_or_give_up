@@ -43,11 +43,20 @@ export async function POST(request) {
                 { wallet }
             );
 
+        console.log(
+            JSON.stringify(
+                response,
+                null,
+                2
+            )
+        )
         await client.disconnect();
 
         return NextResponse.json({
             success: true,
-            hash: response.result.hash
+            hash: response.result.hash,
+            offerSequence: response.result.Sequence,
+            owner: wallet.classicAddress
         });
     }
     catch (error) {
