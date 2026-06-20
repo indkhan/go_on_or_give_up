@@ -32,6 +32,30 @@ export async function POST(request) {
                 { wallet }
             );
 
+        console.log(
+            JSON.stringify(
+                response,
+                null,
+                2
+            )
+        );
+
+        const txResult =
+            response.result.meta.TransactionResult;
+
+        if (txResult !== "tesSUCCESS") {
+            return NextResponse.json(
+                {
+                    success: false,
+                    transactionResult: txResult,
+                    hash: response.result.hash
+                },
+                {
+                    status: 400
+                }
+            );
+        }
+
         await client.disconnect();
 
         return NextResponse.json({

@@ -49,14 +49,48 @@ export async function POST(request) {
                 null,
                 2
             )
+        );
+        const txResult =
+            response.result.meta.TransactionResult;
+
+        if (txResult !== "tesSUCCESS") {
+
+            return NextResponse.json(
+                {
+                    success: false,
+                    transactionResult: txResult
+                },
+                {
+                    status: 400
+                }
+            );
+        }
+
+        console.log(
+            JSON.stringify(
+                response,
+                null,
+                2
+            )
         )
         await client.disconnect();
+
+        const escrowNode =
+            response.result.meta.AffectedNodes.find(
+                node =>
+                    node.CreatedNode?.LedgerEntryType ===
+                    "Escrow"
+            );
+
+        const escrowSequence =
+            escrowNode?.CreatedNode?.NewFields?.Sequence;
 
         return NextResponse.json({
             success: true,
             hash: response.result.hash,
-            offerSequence: response.result.Sequence,
-            owner: wallet.classicAddress
+            offerSequence: escrowSequence,
+            owner: wallet.classicAddress,
+            finishAfter
         });
     }
     catch (error) {

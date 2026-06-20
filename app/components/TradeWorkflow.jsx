@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 export default function TradeWorkflow() {
     const [buyerWallet, setBuyerWallet] = useState(null)
@@ -14,6 +14,56 @@ export default function TradeWorkflow() {
     const [escrowResult, setEscrowResult] = useState(null)
     const [releaseResult, setReleaseResult] = useState(null)
     const [loading, setLoading] = useState(false)
+
+    const [escrowUnlockTime, setEscrowUnlockTime] = useState(null)
+    const [secondsRemaining, setSecondsRemaining] = useState(0)
+
+    useEffect(() => {
+        const buyer =
+            localStorage.getItem(
+                'buyerWallet'
+            )
+
+        if (buyer) {
+            setBuyerWallet(
+                JSON.parse(buyer)
+            )
+        }
+
+        const supplier =
+            localStorage.getItem(
+                'supplierWallet'
+            )
+
+        if (supplier) {
+            setSupplierWallet(
+                JSON.parse(supplier)
+            )
+        }
+    }, [])
+
+    useEffect(() => {
+        if (!escrowUnlockTime) {
+            return;
+        }
+
+        const timer = setInterval(() => {
+            const remaining =
+                Math.max(
+                    0,
+                    Math.floor(
+                        (escrowUnlockTime - Date.now()) /
+                        1000
+                    )
+                );
+
+            setSecondsRemaining(
+                remaining
+            );
+        }, 1000);
+
+        return () => clearInterval(timer);
+    }, [escrowUnlockTime]);
 
     async function loadBalance(address) {
         const res = await fetch('/api/account-info', {
@@ -29,6 +79,46 @@ export default function TradeWorkflow() {
         return await res.json()
     }
 
+    async function refreshBalances() {
+        if (buyerWallet) {
+            const buyerAccount =
+                await loadBalance(
+                    buyerWallet.address
+                );
+
+            const updatedBuyer = {
+                ...buyerWallet,
+                balance: buyerAccount.balanceXrp
+            };
+
+            setBuyerWallet(updatedBuyer);
+
+            localStorage.setItem(
+                "buyerWallet",
+                JSON.stringify(updatedBuyer)
+            );
+        }
+
+        if (supplierWallet) {
+            const supplierAccount =
+                await loadBalance(
+                    supplierWallet.address
+                );
+
+            const updatedSupplier = {
+                ...supplierWallet,
+                balance: supplierAccount.balanceXrp
+            };
+
+            setSupplierWallet(updatedSupplier);
+
+            localStorage.setItem(
+                "supplierWallet",
+                JSON.stringify(updatedSupplier)
+            );
+        }
+    }
+
     async function generateBuyerWallet() {
         try {
             setLoadingBuyer(true)
@@ -41,10 +131,17 @@ export default function TradeWorkflow() {
 
             const account = await loadBalance(wallet.address)
 
-            setBuyerWallet({
+            const buyerData = {
                 ...wallet,
                 balance: account.balanceXrp
-            })
+            }
+
+            setBuyerWallet(buyerData)
+
+            localStorage.setItem(
+                'buyerWallet',
+                JSON.stringify(buyerData)
+            )
         } catch (err) {
             console.error(err)
         } finally {
@@ -64,10 +161,17 @@ export default function TradeWorkflow() {
 
             const account = await loadBalance(wallet.address)
 
-            setSupplierWallet({
+            const supplierData = {
                 ...wallet,
                 balance: account.balanceXrp
-            })
+            }
+
+            setSupplierWallet(supplierData)
+
+            localStorage.setItem(
+                'supplierWallet',
+                JSON.stringify(supplierData)
+            )
         } catch (err) {
             console.error(err)
         } finally {
@@ -86,7 +190,7 @@ export default function TradeWorkflow() {
                 body: JSON.stringify({
                     supplier: 'ACME Export GmbH',
                     buyer: 'Swiss Import AG',
-                    amount: 25000
+                    amount: 2
                 })
             })
 
@@ -132,7 +236,14 @@ export default function TradeWorkflow() {
 
         const data = await res.json()
 
+        console.log('Escrow Response:', data)
+
+
         setEscrowResult(data)
+        setEscrowUnlockTime(
+            (data.finishAfter + 946684800) * 1000
+        )
+        await refreshBalances()
     }
 
     async function confirmDelivery() {
@@ -149,10 +260,11 @@ export default function TradeWorkflow() {
                     offerSequence: escrowResult.offerSequence
                 })
             })
-
+        console.log('Inside TradeWorkflow.js Release Response:', res)
         const data = await res.json()
 
         setReleaseResult(data)
+        await refreshBalances()
     }
 
     return (
@@ -278,7 +390,7 @@ export default function TradeWorkflow() {
                         </p>
 
                         <p>
-                            <strong>Amount:</strong> 25,000 XRP
+                            <strong>Amount:</strong> {trade?.amount || 2} XRP
                         </p>
 
                         <p>
@@ -353,22 +465,41 @@ export default function TradeWorkflow() {
                                         XRPL Escrow Hash:
                                     </p>
 
-                                    <p className="font-mono break-all text-sm">
-                                        {escrowResult.hash}
-                                    </p>
+                                    <a
+                                        href={`https://testnet.xrpl.org/transactions/${escrowResult.hash}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    >
+                                        {escrowResult.hash.slice(0, 8)}...
+                                    </a>
                                 </div>
                             </div>
                         )}
 
+                        {
+                            escrowResult &&
+                            secondsRemaining > 0 && (
+                                <div className="alert alert-warning">
+                                    ⏳ Escrow unlocks in
+                                    {" "}
+                                    {secondsRemaining}
+                                    {" "}
+                                    seconds
+                                </div>
+                            )
+                        }
                         <button
                             className="btn btn-success mt-2"
-                            disabled={!escrowResult}
+                            disabled={
+                                !escrowResult ||
+                                secondsRemaining > 0
+                            }
                             onClick={confirmDelivery}
                         >
                             Confirm Delivery
                         </button>
 
-                        {releaseResult && (
+                        {releaseResult?.success && (
                             <div className="alert alert-success mt-4">
                                 <div>
 
@@ -380,13 +511,30 @@ export default function TradeWorkflow() {
                                         Settlement Hash:
                                     </p>
 
-                                    <p className="font-mono break-all text-sm">
-                                        {releaseResult.hash}
-                                    </p>
+                                    <a
+                                        href={`https://testnet.xrpl.org/transactions/${releaseResult.hash}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    >
+                                        {releaseResult.hash.slice(0, 8)}...
+                                    </a>
 
                                 </div>
                             </div>
                         )}
+                        {releaseResult &&
+                            !releaseResult.success && (
+                                <div className="alert alert-error">
+                                    <p>
+                                        ❌ Escrow Release Failed
+                                    </p>
+                                    <p>
+                                        Reason:
+                                        {" "}
+                                        {releaseResult.transactionResult}
+                                    </p>
+                                </div>
+                            )}
                     </div>
 
                 </div>
