@@ -1,6 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import * as xrpl from 'xrpl'
+import { useWallet } from '../context/WalletContext'
 
 export default function TradeWorkflow() {
     const [buyerWallet, setBuyerWallet] = useState(null)
@@ -17,6 +19,25 @@ export default function TradeWorkflow() {
 
     const [escrowUnlockTime, setEscrowUnlockTime] = useState(null)
     const [secondsRemaining, setSecondsRemaining] = useState(0)
+
+    const {
+        connected,
+        accountAddress,
+        walletManager,
+        sign
+    } = useWallet()
+
+    const connectorRef = useRef(null)
+
+    useEffect(() => {
+        if (connectorRef.current && walletManager) {
+            connectorRef.current.setWalletManager(walletManager)
+        }
+    }, [walletManager])
+
+    function openConnector() {
+        connectorRef.current?.open()
+    }
 
     useEffect(() => {
         const buyer =
@@ -220,30 +241,52 @@ export default function TradeWorkflow() {
     }
 
     async function reserveFunds() {
+        try {
+            setLoading(true)
 
-        const res =
-            await fetch('/api/create-escrow', {
+            const finishAfter = xrpl.isoTimeToRippleTime(
+                new Date(Date.now() + 60000).toISOString()
+            )
+
+            const tx = {
+                TransactionType: 'EscrowCreate',
+                Account: accountAddress,
+                Destination: supplierWallet.address,
+                Amount: xrpl.xrpToDrops(trade.amount),
+                FinishAfter: finishAfter
+            }
+
+            const result = await sign(tx)
+            const tx_blob = result?.tx_blob
+
+            if (!tx_blob) {
+                throw new Error('No signed transaction returned from wallet')
+            }
+
+            const res = await fetch('/api/create-escrow', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    buyerSeed: buyerWallet.seed,
-                    supplierAddress: supplierWallet.address,
-                    amount: trade.amount
-                })
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ txBlob: tx_blob })
             })
 
-        const data = await res.json()
+            const data = await res.json()
 
-        console.log('Escrow Response:', data)
+            console.log('Escrow Response:', data)
 
-
-        setEscrowResult(data)
-        setEscrowUnlockTime(
-            (data.finishAfter + 946684800) * 1000
-        )
-        await refreshBalances()
+            setEscrowResult(data)
+            setEscrowUnlockTime(
+                (data.finishAfter + 946684800) * 1000
+            )
+            await refreshBalances()
+        } catch (err) {
+            if (err.code === 'SIGN_FAILED') {
+                console.log('User cancelled signing')
+            } else {
+                console.error(err)
+            }
+        } finally {
+            setLoading(false)
+        }
     }
 
     async function confirmDelivery() {
@@ -301,31 +344,31 @@ export default function TradeWorkflow() {
 
                             <button
                                 className="btn btn-primary btn-sm"
-                                onClick={generateBuyerWallet}
-                                disabled={loadingBuyer}
+                                onClick={openConnector}
                             >
-                                {loadingBuyer
-                                    ? 'Generating...'
-                                    : 'Generate Buyer Wallet'}
+                                {
+                                    connected
+                                        ? 'Wallet Connected'
+                                        : 'Connect Wallet'
+                                }
                             </button>
 
-                            {buyerWallet && (
+                            {connected && (
+
                                 <div className="mt-4 space-y-2 text-sm">
 
                                     <p>
-                                        <strong>Address:</strong>
+                                        <strong>
+                                            Address:
+                                        </strong>
                                     </p>
 
                                     <p className="font-mono break-all">
-                                        {buyerWallet.address}
-                                    </p>
-
-                                    <p>
-                                        <strong>Balance:</strong>{' '}
-                                        {buyerWallet.balance || '-'} XRP
+                                        {accountAddress}
                                     </p>
 
                                 </div>
+
                             )}
 
                         </div>
@@ -539,6 +582,8 @@ export default function TradeWorkflow() {
 
                 </div>
             </div>
+
+            <xrpl-wallet-connector ref={connectorRef} />
 
         </div >
     )

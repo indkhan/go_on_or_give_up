@@ -1,103 +1,118 @@
 'use client'
-import { useState } from 'react'
-import { useWallet } from './context/WalletContext'
 
-export default function Home() {
-    const { connect, generateWallet, mintTicket } = useWallet()
-    const [isConnecting, setIsConnecting] = useState(false)
-    const [generatedWallet, setGeneratedWallet] = useState(null)
-    const [uri, setUri] = useState('')
-    const [isConnected, setIsConnected] = useState(false)
+import { useEffect, useRef } from 'react'
+import { useWallet } from '../context/WalletContext'
 
-    const handleConnect = async () => {
-        setIsConnecting(true)
-        try {
-            await connect()
-            setIsConnected(true)
-        } finally {
-            setIsConnecting(false)
+export default function WalletPage() {
+
+    const {
+        connected,
+        accountAddress,
+        walletName,
+        walletManager,
+        disconnect,
+        error
+    } = useWallet()
+
+    const connectorRef = useRef(null)
+
+    useEffect(() => {
+
+        if (connectorRef.current && walletManager) {
+            connectorRef.current.setWalletManager(walletManager)
         }
-    }
 
-    const handleGenerate = async () => {
-        const wallet = await generateWallet()
-        setGeneratedWallet(wallet)
-    }
+    }, [walletManager])
 
-    const handleMint = async () => {
-        if (!generatedWallet?.seed) return
-        await mintTicket(generatedWallet.seed, uri)
+    function openConnector() {
+        connectorRef.current?.open()
     }
 
     return (
-        <>
-            <div class="navbar bg-primary text-primary-content">
-                <button class="btn btn-ghost text-xl">daisyUI</button>
-            </div>
-            <main className="min-h-screen p-8 max-w-4xl mx-auto">
-                <h1 className="text-3xl font-bold mb-8">XRPL Wallet</h1>
+        <div className="min-h-screen p-6">
 
-                <div className="space-y-6">
-                    <section className="p-6 border rounded-lg">
-                        <h2 className="text-xl font-semibold mb-4">Connection</h2>
-                        <button
-                            onClick={handleConnect}
-                            disabled={isConnecting}
-                            className={`px-4 py-2 bg-blue-600 text-white rounded
-              ${isConnecting ? 'animate-pulse cursor-not-allowed' : 'hover:bg-blue-700'}
-              ${isConnecting ? 'opacity-90' : ''}`}
-                        >
-                            {isConnecting ? 'Connecting...' : isConnected ? 'Connected!' : 'Connect to XRPL'}
-                        </button>
-                    </section>
+            <div className="max-w-2xl mx-auto">
 
-                    {isConnected && (
-                        <section className="p-6 border rounded-lg bg-green-50">
-                            <h2 className="text-xl font-semibold mb-4">Connected!</h2>
-                            <p className="text-green-600">Successfully connected to XRPL Testnet</p>
-                        </section>
-                    )}
+                <h1 className="text-3xl font-bold mb-6">
+                    XRPL Wallet Connection
+                </h1>
 
-                    <section className="p-6 border rounded-lg">
-                        <h2 className="text-xl font-semibold mb-4">Wallet</h2>
-                        <button
-                            onClick={handleGenerate}
-                            disabled={!isConnected}
-                            className={`px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 mb-4
-              ${!isConnected ? 'opacity-50 cursor-not-allowed' : ''}`}
-                        >
-                            Generate Wallet
-                        </button>
+                <div className="card bg-base-100 shadow-xl border border-base-300">
 
-                        {generatedWallet && (
-                            <div className="mt-4 space-y-2">
-                                <p><span className="font-medium">Address:</span> {generatedWallet.address}</p>
-                                <p><span className="font-medium">Seed:</span> {generatedWallet.seed}</p>
+                    <div className="card-body">
+
+                        <h2 className="card-title">
+                            Wallet Status
+                            <div className="alert alert-info">
+                                Connected:
+                                {" "}
+                                {connected ? "YES" : "NO"}
+                            </div>
+                        </h2>
+
+                        {!connected && (
+                            <div className="space-y-4">
+
+                                <p>
+                                    Connect a supported XRPL wallet.
+                                </p>
+
+                                <button
+                                    className="btn btn-primary"
+                                    onClick={openConnector}
+                                >
+                                    Connect Wallet
+                                </button>
+
                             </div>
                         )}
-                    </section>
 
-                    <section className="p-6 border rounded-lg">
-                        <h2 className="text-xl font-semibold mb-4">Mint NFT</h2>
-                        <div className="space-y-4">
-                            <input
-                                type="text"
-                                value={uri}
-                                onChange={(e) => setUri(e.target.value)}
-                                placeholder="Enter URI (e.g., ipfs://...)"
-                                className="w-full p-2 border rounded"
-                            />
-                            <button
-                                onClick={handleMint}
-                                disabled={!generatedWallet || !uri || !isConnected}
-                                className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50"
-                            >
-                                Mint Ticket
-                            </button>
-                        </div>
-                    </section>
+                        {connected && (
+                            <div className="space-y-4">
+
+                                <div className="alert alert-success">
+                                    <span>Wallet Connected</span>
+                                </div>
+
+                                <div>
+                                    <p className="font-semibold">Wallet</p>
+                                    <p>{walletName}</p>
+                                </div>
+
+                                <div>
+                                    <p className="font-semibold">Address</p>
+                                    <p className="font-mono break-all">
+                                        {accountAddress}
+                                    </p>
+                                </div>
+
+                                <button
+                                    className="btn btn-error"
+                                    onClick={disconnect}
+                                >
+                                    Disconnect
+                                </button>
+
+                            </div>
+                        )}
+
+                        {error && (
+                            <div className="alert alert-error mt-4">
+                                <span>
+                                    {error.message || 'Wallet connection failed'}
+                                </span>
+                            </div>
+                        )}
+
+                    </div>
+
                 </div>
-            </main>
-        </>
+
+            </div>
+
+            {/* xrpl-connect web component — handles wallet picker + QR modal */}
+            <xrpl-wallet-connector ref={connectorRef} />
+
+        </div>
     )
 }
