@@ -1,25 +1,11 @@
 'use client'
-import { createContext, useContext, useEffect, useState } from 'react'
-
-const STORAGE_KEY = 'tradeflow-role'
+import { createContext, useContext, useState } from 'react'
 
 export function RoleProvider({ children }) {
-  const [role, setRoleState] = useState(null)
-  const [loaded, setLoaded] = useState(false)
-
-  useEffect(() => {
-    const stored = window.localStorage.getItem(STORAGE_KEY)
-    if (stored === 'buyer' || stored === 'seller') setRoleState(stored)
-    setLoaded(true)
-  }, [])
-
-  const setRole = next => {
-    window.localStorage.setItem(STORAGE_KEY, next)
-    setRoleState(next)
-  }
+  const [role, setRole] = useState(null)
 
   return (
-    <RoleContext.Provider value={{ role, setRole, loaded }}>
+    <RoleContext.Provider value={{ role, setRole, loaded: true }}>
       {children}
     </RoleContext.Provider>
   )
