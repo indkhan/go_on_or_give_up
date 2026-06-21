@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s -X POST https://s.altnet.rippletest.net:51234 -H 'Content-Type: application/json' -d '{ *)",
+      "Bash(curl -s \"http://localhost:3000/api/trade-state?tradeId=T-1782003950817\")"
+    ]
+  }
+}

@@ -3,104 +3,59 @@ import xrpl from "xrpl";
 
 export async function POST(request) {
     try {
-        const {
-            buyerSeed,
-            supplierAddress,
-            amount
-        } = await request.json();
+        const { txBlob } = await request.json();
 
-        const client =
-            new xrpl.Client(
-                process.env.NEXT_PUBLIC_CLIENT
-            );
+        const client = new xrpl.Client(
+            process.env.NEXT_PUBLIC_CLIENT
+        );
 
         await client.connect();
 
-        const wallet =
-            xrpl.Wallet.fromSeed(
-                buyerSeed
-            );
+        const response = await client.submitAndWait(txBlob);
 
-        // Funds cannot be released for 60 seconds.
-        const finishAfter =
-            xrpl.isoTimeToRippleTime(
-                new Date(
-                    Date.now() + 60000
-                ).toISOString()
-            );
+        await client.disconnect();
 
-        const tx = {
-            TransactionType: "EscrowCreate",
-            Account: wallet.classicAddress,
-            Destination: supplierAddress,
-            Amount: xrpl.xrpToDrops(amount),
-            FinishAfter: finishAfter
-        };
-
-        const response =
-            await client.submitAndWait(
-                tx,
-                { wallet }
-            );
-
-        console.log(
-            JSON.stringify(
-                response,
-                null,
-                2
-            )
-        );
         const txResult =
             response.result.meta.TransactionResult;
 
         if (txResult !== "tesSUCCESS") {
-
             return NextResponse.json(
-                {
-                    success: false,
-                    transactionResult: txResult
-                },
-                {
-                    status: 400
-                }
+                { success: false, transactionResult: txResult },
+                { status: 400 }
             );
         }
-
-        console.log(
-            JSON.stringify(
-                response,
-                null,
-                2
-            )
-        )
-        await client.disconnect();
 
         const escrowNode =
             response.result.meta.AffectedNodes.find(
                 node =>
-                    node.CreatedNode?.LedgerEntryType ===
-                    "Escrow"
+                    node.CreatedNode?.LedgerEntryType === "Escrow"
             );
 
-        const escrowSequence =
-            escrowNode?.CreatedNode?.NewFields?.Sequence;
+        const offerSequence =
+            escrowNode?.CreatedNode?.NewFields?.Sequence
+            ?? response.result.tx_json?.Sequence
+
+        const finishAfter =
+            escrowNode?.CreatedNode?.NewFields?.FinishAfter
+
+        const owner =
+            escrowNode?.CreatedNode?.NewFields?.Account
+            ?? response.result.tx_json?.Account
+
+        console.log('Escrow created:', { offerSequence, finishAfter, owner, escrowNode: JSON.stringify(escrowNode) })
 
         return NextResponse.json({
             success: true,
             hash: response.result.hash,
-            offerSequence: escrowSequence,
-            owner: wallet.classicAddress,
+            offerSequence,
+            owner,
             finishAfter
         });
-    }
-    catch (error) {
+
+    } catch (error) {
         return NextResponse.json(
-            {
-                error: error.message
-            },
-            {
-                status: 500
-            }
+            { error: error.message },
+            { status: 500 }
         );
     }
 }
