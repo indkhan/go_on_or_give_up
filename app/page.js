@@ -159,7 +159,7 @@ export default function Home() {
             <header className="tf-gradient text-white">
                 <div className="max-w-5xl mx-auto px-6 py-6 flex items-center justify-between">
                     <div>
-                        <h1 className="text-2xl font-bold tracking-tight">TradeFlow AI</h1>
+                        <a href="/" className="text-2xl font-bold tracking-tight hover:opacity-80">TradeFlow AI</a>
                         <p className="text-white/80 text-sm">AI-Assisted Trade Finance on XRPL</p>
                     </div>
                     <div className="flex items-center gap-2 rounded-full bg-white/15 px-3 py-1.5 text-sm">

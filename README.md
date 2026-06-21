@@ -140,6 +140,7 @@ Create `.env`:
 ```env
 NEXT_PUBLIC_CLIENT=wss://s.altnet.rippletest.net:51233
 NEXT_PUBLIC_EXPLORER_NETWORK=testnet
+NEXT_PUBLIC_XAMAN_API_KEY=""
 ```
 
 ***

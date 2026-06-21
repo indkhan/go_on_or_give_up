@@ -2,44 +2,30 @@ import { NextResponse } from "next/server";
 import xrpl from "xrpl";
 
 export async function POST(request) {
+    const client = new xrpl.Client(process.env.NEXT_PUBLIC_CLIENT)
     try {
         const { address } = await request.json();
 
-        const client = new xrpl.Client(
-            process.env.NEXT_PUBLIC_CLIENT
-        );
+        if (!address) {
+            return NextResponse.json({ error: 'address is required' }, { status: 400 })
+        }
 
         await client.connect();
 
         const response = await client.request({
             command: "account_info",
-            account: address
+            account: address,
+            ledger_index: "validated"
         });
 
-        await client.disconnect();
+        const balanceXrp = xrpl.dropsToXrp(response.result.account_data.Balance);
 
-        const balanceXrp =
-            xrpl.dropsToXrp(
-                response.result.account_data.Balance
-            );
+        return NextResponse.json({ address, balanceXrp });
 
-        return NextResponse.json({
-            address,
-            balanceXrp
-        });
-    }
-    catch (error) {
-
-        console.error("ACCOUNT INFO ERROR")
-        console.error(JSON.stringify(error, null, 2))
-
-        return NextResponse.json(
-            {
-                error: error.message
-            },
-            {
-                status: 500
-            }
-        );
+    } catch (error) {
+        console.error("ACCOUNT INFO ERROR:", error.message)
+        return NextResponse.json({ error: error.message }, { status: 500 });
+    } finally {
+        try { await client.disconnect() } catch {}
     }
 }

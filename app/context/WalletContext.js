@@ -39,6 +39,15 @@ export function WalletProvider({
     setError
   ] = useState(null)
 
+
+  useEffect(() => {
+    const saved = localStorage.getItem('xrpl_address')
+    if (saved) {
+      setAccountAddress(saved)
+      setWalletName(localStorage.getItem('xrpl_wallet') || 'XRPL Wallet')
+    }
+  }, [])
+
   useEffect(() => {
 
     let manager = null
@@ -65,9 +74,6 @@ export function WalletProvider({
           Object.keys(xrplConnect)
         )
 
-        const XamanAdapter =
-          xrplConnect.XamanAdapter
-
         const CrossmarkAdapter =
           xrplConnect.CrossmarkAdapter
 
@@ -75,25 +81,11 @@ export function WalletProvider({
           new CrossmarkAdapter()
         ]
 
-        const xamanApiKey =
-          process.env.NEXT_PUBLIC_XAMAN_API_KEY
-
-        if (xamanApiKey) {
-          adapters.push(
-            new XamanAdapter({ apiKey: xamanApiKey })
-          )
-        }
-
-        console.log(
-          'Xaman API key present:',
-          !!xamanApiKey
-        )
-
         manager =
           new WalletManager({
             adapters,
             network: 'testnet',
-            autoConnect: true
+            autoConnect: false
           })
 
         console.log(
@@ -111,27 +103,21 @@ export function WalletProvider({
             )
 
             setConnected(true)
-
-            setAccountAddress(
-              account.address
-            )
-
-            setWalletName(
-              account.wallet ||
-              'XRPL Wallet'
-            )
+            setAccountAddress(account.address)
+            setWalletName(account.wallet || 'XRPL Wallet')
+            localStorage.setItem('xrpl_address', account.address)
+            localStorage.setItem('xrpl_wallet', account.wallet || 'XRPL Wallet')
           }
         )
 
         manager.on(
           'disconnect',
           () => {
-
             setConnected(false)
-
             setAccountAddress(null)
-
             setWalletName(null)
+            localStorage.removeItem('xrpl_address')
+            localStorage.removeItem('xrpl_wallet')
           }
         )
 

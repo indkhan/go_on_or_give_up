@@ -31,17 +31,24 @@ export async function POST(request) {
                     node.CreatedNode?.LedgerEntryType === "Escrow"
             );
 
-        const escrowSequence =
-            escrowNode?.CreatedNode?.NewFields?.Sequence;
+        const offerSequence =
+            escrowNode?.CreatedNode?.NewFields?.Sequence
+            ?? response.result.tx_json?.Sequence
 
         const finishAfter =
-            escrowNode?.CreatedNode?.NewFields?.FinishAfter;
+            escrowNode?.CreatedNode?.NewFields?.FinishAfter
+
+        const owner =
+            escrowNode?.CreatedNode?.NewFields?.Account
+            ?? response.result.tx_json?.Account
+
+        console.log('Escrow created:', { offerSequence, finishAfter, owner, escrowNode: JSON.stringify(escrowNode) })
 
         return NextResponse.json({
             success: true,
             hash: response.result.hash,
-            offerSequence: escrowSequence,
-            owner: response.result.Account,
+            offerSequence,
+            owner,
             finishAfter
         });
 
