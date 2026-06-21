@@ -60,58 +60,20 @@ How the current codebase actually fits together — a Next.js app whose API rout
 talk to the XRPL Testnet, with transactions signed client-side by the user's wallet.
 
 ```mermaid
-flowchart TB
-    subgraph CLIENT["Frontend — Next.js 15 / React 19"]
-        UI["Dashboard & Trade Workflow UI<br/>(Tailwind + DaisyUI)"]
-        CTX["Context providers<br/>WalletContext · RoleContext"]
-        WALLET["Wallet connector<br/>(xrpl-connect)"]
-        UPLOAD["Document upload<br/>invoice / PO / shipping"]
-    end
+flowchart LR
+    FE["**Frontend**<br/>Next.js · React<br/>wallet (xrpl-connect)"]
+    API["**API routes**<br/>extract · treasury-agent<br/>autofill · submit-signed"]
+    AI["**OCR**<br/>Tesseract + pdf-parse"]
+    XRPL["**XRPL Testnet**<br/>TokenEscrow (XLS-85)<br/>RLUSD"]
 
-    subgraph API["Backend — Next.js API routes (Node runtime)"]
-        EXTRACT["/api/extract-invoice"]
-        AGENT["/api/treasury-agent<br/>spend cap + supplier whitelist"]
-        TRADE["/api/create-trade<br/>/api/trade-state"]
-        AUTOFILL["/api/autofill-tx"]
-        SUBMIT["/api/submit-signed"]
-        ESCROW_API["/api/create-escrow<br/>/api/release-escrow"]
-        TRUST["/api/setup-trustline"]
-        ACCT["/api/account-info<br/>/api/transaction-history"]
-    end
-
-    subgraph AI["Document intelligence"]
-        OCR["Tesseract.js (OCR)<br/>+ pdf-parse"]
-    end
-
-    subgraph XRPL["XRPL Testnet"]
-        ESCROW["TokenEscrow (XLS-85)"]
-        RLUSD["RLUSD trustlines"]
-        LEDGER[("XRPL Ledger")]
-    end
-
-    UI --> CTX
-    UPLOAD --> EXTRACT
-    UI --> AGENT
-    UI --> TRADE
-    UI --> ACCT
-    WALLET --> CTX
-
-    EXTRACT --> OCR
-    AGENT -. policy gate .-> AUTOFILL
-    AUTOFILL -- unsigned tx --> WALLET
-    WALLET -- signed blob --> SUBMIT
-    SUBMIT --> ESCROW_API
-    ESCROW_API --> ESCROW
-    TRUST --> RLUSD
-    ACCT --> LEDGER
-
-    ESCROW --> LEDGER
-    RLUSD --> LEDGER
+    FE -- upload / actions --> API
+    API --> AI
+    API -- unsigned tx --> FE
+    FE -- signed blob --> API
+    API -- escrow / payment --> XRPL
 
     classDef chain fill:#0f3d2e,stroke:#3ddc84,color:#fff;
-    classDef agent fill:#1d3a5b,stroke:#5b9bff,color:#fff;
-    class ESCROW,RLUSD,LEDGER chain;
-    class AGENT agent;
+    class XRPL chain;
 ```
 
 **Notes on the current build:**
