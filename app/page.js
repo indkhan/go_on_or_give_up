@@ -1,10 +1,64 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import StatusBadge from './components/StatusBadge'
 import Dashboard from './components/Dashboard'
 import { invoices as seedInvoices } from './data/mockData'
 import TradeWorkflow from './components/TradeWorkflow'
+import { useRole } from './context/RoleContext'
+
+function RoleOnboarding({ onSelect }) {
+    return (
+        <div className="app-shell flex min-h-screen items-center justify-center px-6">
+            <div className="panel panel-pad max-w-sm text-center">
+                <h2 className="font-display text-lg font-semibold">Welcome to TradeFlow AI</h2>
+                <p className="mt-1 text-sm text-base-content/55">Tell us how you'll use the platform.</p>
+                <div className="mt-6 flex flex-col gap-3">
+                    <button className="btn-glow rounded-[0.7rem] py-3 text-sm font-semibold" onClick={() => onSelect('buyer')}>
+                        I'm a Buyer
+                    </button>
+                    <button className="btn-glow rounded-[0.7rem] py-3 text-sm font-semibold" onClick={() => onSelect('seller')}>
+                        I'm a Seller
+                    </button>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+function SunIcon() {
+    return (
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="5" />
+            <line x1="12" y1="1" x2="12" y2="3" />
+            <line x1="12" y1="21" x2="12" y2="23" />
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+            <line x1="1" y1="12" x2="3" y2="12" />
+            <line x1="21" y1="12" x2="23" y2="12" />
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+        </svg>
+    )
+}
+
+function MoonIcon() {
+    return (
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+        </svg>
+    )
+}
+
+function UploadIcon() {
+    return (
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="17 8 12 3 7 8" />
+            <line x1="12" y1="3" x2="12" y2="15" />
+        </svg>
+    )
+}
 
 function InvoiceUpload({ onProcessed }) {
     const [file, setFile] = useState(null)
@@ -41,105 +95,115 @@ function InvoiceUpload({ onProcessed }) {
     }
 
     return (
-        <div className="card bg-base-100 shadow-sm border border-base-300">
-            <div className="card-body p-6">
-                <h2 className="text-lg font-semibold">Upload Invoice</h2>
-                <p className="text-sm text-base-content/60">
-                    Drop an invoice and the AI extracts supplier, buyer, amount and currency automatically.
-                </p>
+        <div className="panel panel-pad self-start">
+            <span className="eyebrow-tag">Upload</span>
+            <h2 className="font-display mt-3 text-lg font-semibold">New invoice</h2>
+            <p className="mt-1 text-sm text-base-content/55">AI reads supplier, buyer & amount.</p>
 
-                <label
-                    htmlFor="invoice-file"
-                    className="mt-4 flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-base-300 bg-base-200/50 px-6 py-10 cursor-pointer hover:border-accent transition-colors"
-                >
-                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#0085c0" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                        <polyline points="17 8 12 3 7 8" />
-                        <line x1="12" y1="3" x2="12" y2="15" />
-                    </svg>
-                    {file ? (
-                        <span className="font-medium text-primary">{file.name}</span>
-                    ) : (
-                        <>
-                            <span className="font-medium">Click to upload or drag & drop</span>
-                            <span className="text-xs text-base-content/50">PNG, JPG or PDF</span>
-                        </>
-                    )}
-                    <input
-                        id="invoice-file"
-                        type="file"
-                        accept="image/png,image/jpeg,image/jpg,application/pdf"
-                        className="hidden"
-                        onChange={pick}
-                    />
-                </label>
-
-                <button
-                    className="btn btn-primary mt-4 w-full"
-                    disabled={!file || busy}
-                    onClick={process}
-                >
-                    {busy ? (
-                        <span className="flex items-center gap-2">
-                            <span className="loading loading-spinner loading-sm" /> Processing with AI…
-                        </span>
-                    ) : (
-                        'Process Invoice'
-                    )}
-                </button>
-
-                {error && (
-                    <p className="mt-3 text-sm text-error">{error}</p>
+            <label htmlFor="invoice-file" className="dropzone mt-5">
+                <span className="text-sky-300/90">
+                    <UploadIcon />
+                </span>
+                {file ? (
+                    <span className="font-medium text-sky-300">{file.name}</span>
+                ) : (
+                    <>
+                        <span className="text-sm font-medium">Drop a file or browse</span>
+                        <span className="text-xs tracking-wider text-base-content/40 uppercase">PNG · JPG · PDF</span>
+                    </>
                 )}
-            </div>
+                <input
+                    id="invoice-file"
+                    type="file"
+                    accept="image/png,image/jpeg,image/jpg,application/pdf"
+                    className="hidden"
+                    onChange={pick}
+                />
+            </label>
+
+            <button
+                className="btn-glow mt-4 w-full rounded-[0.7rem] py-3 text-sm font-semibold disabled:bg-none disabled:bg-white/[0.04] disabled:text-base-content/40"
+                disabled={!file || busy}
+                onClick={process}
+            >
+                {busy ? (
+                    <span className="flex items-center justify-center gap-2">
+                        <span className="loading loading-spinner loading-sm" /> Reading…
+                    </span>
+                ) : (
+                    'Process invoice'
+                )}
+            </button>
+
+            {error && <p className="note note-err mt-3">{error}</p>}
         </div>
     )
 }
 
 function InvoiceTable({ rows }) {
     return (
-        <div className="card bg-base-100 shadow-sm border border-base-300">
-            <div className="card-body p-0">
-                <div className="overflow-x-auto">
-                    <table className="table">
-                        <thead>
-                            <tr className="text-base-content/50">
-                                <th>Invoice</th>
-                                <th>Supplier</th>
-                                <th>Buyer</th>
-                                <th className="text-right">Amount</th>
-                                <th>Date</th>
-                                <th>Status</th>
+        <div className="panel overflow-hidden">
+            <div className="overflow-x-auto">
+                <table className="tf-table">
+                    <thead>
+                        <tr>
+                            <th>Invoice</th>
+                            <th>Supplier</th>
+                            <th>Buyer</th>
+                            <th className="text-right">Amount</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {rows.map(inv => (
+                            <tr key={inv.id}>
+                                <td className="tnum text-xs text-base-content/55">{inv.id}</td>
+                                <td className="font-medium">{inv.supplier}</td>
+                                <td className="text-base-content/75">{inv.buyer}</td>
+                                <td className="tnum text-right">
+                                    {inv.amount.toLocaleString()} <span className="text-base-content/45">{inv.currency}</span>
+                                </td>
+                                <td className="tnum text-xs text-base-content/45">{inv.date}</td>
+                                <td><StatusBadge status={inv.status} /></td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            {rows.map(inv => (
-                                <tr key={inv.id} className="hover:bg-base-200/40">
-                                    <td className="font-mono text-xs">{inv.id}</td>
-                                    <td className="font-medium">{inv.supplier}</td>
-                                    <td>{inv.buyer}</td>
-                                    <td className="text-right font-mono">
-                                        {inv.amount.toLocaleString()} {inv.currency}
-                                    </td>
-                                    <td className="text-base-content/60">{inv.date}</td>
-                                    <td><StatusBadge status={inv.status} /></td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                        ))}
+                    </tbody>
+                </table>
             </div>
         </div>
     )
 }
 
+const TABS = [
+    { key: 'invoices', label: 'Invoices' },
+    { key: 'dashboard', label: 'Dashboard' },
+    { key: 'workflow', label: 'Settlement' },
+]
+
 export default function Home() {
+    const { role, setRole, loaded } = useRole()
     const [tab, setTab] = useState('invoices')
     const [rows, setRows] = useState(seedInvoices)
+    const [theme, setTheme] = useState('tradeflow')
+
+    useEffect(() => {
+        const saved = localStorage.getItem('tf-theme') || 'tradeflow'
+        setTheme(saved)
+        document.documentElement.setAttribute('data-theme', saved)
+    }, [])
+
+    function toggleTheme() {
+        const next = theme === 'tradeflow' ? 'tradeflow-light' : 'tradeflow'
+        setTheme(next)
+        document.documentElement.setAttribute('data-theme', next)
+        localStorage.setItem('tf-theme', next)
+    }
+
+    if (!loaded) return null
+    if (!role) return <RoleOnboarding onSelect={setRole} />
 
     function handleProcessed(data, meta) {
-        // Fields extracted by /api/extract-invoice (OCR for images, text layer for PDFs).
-        // If anything is missing or OCR confidence was low, flag it for human review.
         const next = {
             id: `INV-2026-${String(rows.length + 1).padStart(3, '0')}`,
             supplier: data?.supplier || '—',
@@ -154,52 +218,59 @@ export default function Home() {
     }
 
     return (
-        <div className="min-h-screen bg-base-200">
-            {/* Header */}
-            <header className="tf-gradient text-white">
-                <div className="max-w-5xl mx-auto px-6 py-6 flex items-center justify-between">
-                    <div>
-                        <a href="/" className="text-2xl font-bold tracking-tight hover:opacity-80">TradeFlow AI</a>
-                        <p className="text-white/80 text-sm">AI-Assisted Trade Finance on XRPL</p>
+        <div className="app-shell">
+            {/* Top bar */}
+            <header className="app-bar">
+                <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3.5">
+                    <div className="flex items-center gap-3">
+                        <span className="brand-mark">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M4 17 L10 11 L14 15 L20 7" />
+                                <path d="M15 7 L20 7 L20 12" />
+                            </svg>
+                        </span>
+                        <div className="leading-none">
+                            <span className="wordmark text-[17px] text-base-content">TradeFlow</span>
+                            <span className="wordmark text-[17px] text-sky-400"> AI</span>
+                        </div>
                     </div>
-                    <div className="flex items-center gap-2 rounded-full bg-white/15 px-3 py-1.5 text-sm">
-                        <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
-                        XRPL Testnet
+                    <div className="flex items-center gap-2">
+                        <div className="net-pill">
+                            <span className="net-dot" />
+                            XRPL Testnet
+                        </div>
+                        <button
+                            onClick={toggleTheme}
+                            className="theme-toggle"
+                            aria-label={theme === 'tradeflow' ? 'Switch to light mode' : 'Switch to dark mode'}
+                            title={theme === 'tradeflow' ? 'Light mode' : 'Dark mode'}
+                        >
+                            {theme === 'tradeflow' ? <SunIcon /> : <MoonIcon />}
+                        </button>
                     </div>
                 </div>
             </header>
 
-            <main className="max-w-5xl mx-auto px-6 py-8">
+            <main className={tab === 'dashboard' ? 'dashboard-main' : 'mx-auto max-w-6xl px-6 py-9'}>
                 {/* Tabs */}
-                <div role="tablist" className="tabs tabs-boxed bg-base-100 w-fit mb-6 shadow-sm">
-                    <button
-                        role="tab"
-                        className={`tab ${tab === 'invoices' ? 'tab-active !bg-primary !text-white' : ''}`}
-                        onClick={() => setTab('invoices')}
-                    >
-                        Invoices
-                    </button>
-                    <button
-                        role="tab"
-                        className={`tab ${tab === 'dashboard' ? 'tab-active !bg-primary !text-white' : ''}`}
-                        onClick={() => setTab('dashboard')}
-                    >
-                        Dashboard
-                    </button>
-                    <button
-                        role="tab"
-                        className={`tab ${tab === 'workflow'
-                            ? 'tab-active !bg-primary !text-white'
-                            : ''
-                            }`}
-                        onClick={() => setTab('workflow')}
-                    >
-                        Trade Workflow
-                    </button>
+                <div
+                    role="tablist"
+                    className={`seg ${tab === 'dashboard' ? 'dashboard-tabs' : 'mb-8'}`}
+                >
+                    {TABS.map(t => (
+                        <button
+                            key={t.key}
+                            role="tab"
+                            className={`seg__btn ${tab === t.key ? 'is-active' : ''}`}
+                            onClick={() => setTab(t.key)}
+                        >
+                            {t.label}
+                        </button>
+                    ))}
                 </div>
 
                 {tab === 'invoices' ? (
-                    <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-6">
+                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[330px_1fr]">
                         <InvoiceUpload onProcessed={handleProcessed} />
                         <InvoiceTable rows={rows} />
                     </div>
