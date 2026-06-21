@@ -4,7 +4,15 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import * as xrpl from 'xrpl'
 import { useWallet } from '../context/WalletContext'
+import { useRole } from '../context/RoleContext'
 import { ASSET_LIST, DEFAULT_ASSET } from '../config/assets'
+
+// The onboarding role ('buyer'/'seller') maps onto the workflow role ('buyer'/'supplier')
+function toWorkflowRole(onboardingRole) {
+    if (onboardingRole === 'seller') return 'supplier'
+    if (onboardingRole === 'buyer') return 'buyer'
+    return null
+}
 
 function SupplierBalance({ address }) {
     const [balance, setBalance] = useState(null)
@@ -59,7 +67,11 @@ export default function TradeWorkflow() {
     const urlRole = searchParams.get('role')
     const urlTradeId = searchParams.get('tradeId')
 
-    const [role, setRole] = useState(urlRole ?? null)
+    const { role: onboardingRole } = useRole()
+
+    // URL role (e.g. a shared supplier link) wins; otherwise inherit the role
+    // chosen during onboarding so we never ask the user twice.
+    const [role, setRole] = useState(urlRole ?? toWorkflowRole(onboardingRole))
     const [tradeId, setTradeId] = useState(urlTradeId ?? null)
     const [supplierLink, setSupplierLink] = useState(null)
 
