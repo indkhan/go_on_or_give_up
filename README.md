@@ -49,8 +49,75 @@ the path from document to settlement:
 6. Final Release          Escrow released → supplier paid in RLUSD
 ```
 
-See the full diagrams in [docs/architecture.md](docs/architecture.md) and
-[docs/flowchart.md](docs/flowchart.md).
+See the full target-architecture diagrams in [docs/architecture.md](docs/architecture.md)
+and [docs/flowchart.md](docs/flowchart.md).
+
+---
+
+## Architecture (as built)
+
+How the current codebase actually fits together — a Next.js app whose API routes
+talk to the XRPL Testnet, with transactions signed client-side by the user's wallet.
+
+```mermaid
+flowchart TB
+    subgraph CLIENT["Frontend — Next.js 15 / React 19"]
+        UI["Dashboard & Trade Workflow UI<br/>(Tailwind + DaisyUI)"]
+        CTX["Context providers<br/>WalletContext · RoleContext"]
+        WALLET["Wallet connector<br/>(xrpl-connect)"]
+        UPLOAD["Document upload<br/>invoice / PO / shipping"]
+    end
+
+    subgraph API["Backend — Next.js API routes (Node runtime)"]
+        EXTRACT["/api/extract-invoice"]
+        AGENT["/api/treasury-agent<br/>spend cap + supplier whitelist"]
+        TRADE["/api/create-trade<br/>/api/trade-state"]
+        AUTOFILL["/api/autofill-tx"]
+        SUBMIT["/api/submit-signed"]
+        ESCROW_API["/api/create-escrow<br/>/api/release-escrow"]
+        TRUST["/api/setup-trustline"]
+        ACCT["/api/account-info<br/>/api/transaction-history"]
+    end
+
+    subgraph AI["Document intelligence"]
+        OCR["Tesseract.js (OCR)<br/>+ pdf-parse"]
+    end
+
+    subgraph XRPL["XRPL Testnet"]
+        ESCROW["TokenEscrow (XLS-85)"]
+        RLUSD["RLUSD trustlines"]
+        LEDGER[("XRPL Ledger")]
+    end
+
+    UI --> CTX
+    UPLOAD --> EXTRACT
+    UI --> AGENT
+    UI --> TRADE
+    UI --> ACCT
+    WALLET --> CTX
+
+    EXTRACT --> OCR
+    AGENT -. policy gate .-> AUTOFILL
+    AUTOFILL -- unsigned tx --> WALLET
+    WALLET -- signed blob --> SUBMIT
+    SUBMIT --> ESCROW_API
+    ESCROW_API --> ESCROW
+    TRUST --> RLUSD
+    ACCT --> LEDGER
+
+    ESCROW --> LEDGER
+    RLUSD --> LEDGER
+
+    classDef chain fill:#0f3d2e,stroke:#3ddc84,color:#fff;
+    classDef agent fill:#1d3a5b,stroke:#5b9bff,color:#fff;
+    class ESCROW,RLUSD,LEDGER chain;
+    class AGENT agent;
+```
+
+**Notes on the current build:**
+- The **Treasury Agent** is a deterministic policy check (`amount < 50,000 && supplierApproved`) — the KYA/Credentials (XLS-70/80) guardrails in [docs/architecture.md](docs/architecture.md) are target design, not yet wired on-chain.
+- **Signing happens client-side**: the backend autofills an unsigned transaction, the wallet signs it, and `/api/submit-signed` relays the blob — the server never holds keys.
+- Document intelligence is **OCR + PDF text extraction** today; LLM cross-document validation is the next step.
 
 ---
 
